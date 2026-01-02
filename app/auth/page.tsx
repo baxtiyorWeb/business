@@ -54,7 +54,7 @@ export default function AuthPage() {
         'google' as any,
         `${window.location.origin}/`,
         `${window.location.origin}/auth`
-      );
+      )
     } catch (err: any) {
       setError(err.message || 'Google bilan kirishda xatolik yuz berdi');
       setLoading(false);
