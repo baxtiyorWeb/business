@@ -1,42 +1,41 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Settings as SettingsIcon, 
-  Lock, 
-  Bell, 
-  Globe,
-  Moon,
-  Sun,
-  Save
-} from 'lucide-react';
-import { account } from '@/lib/appwrite';
-import { useRouter } from 'next/navigation';
-import { toast } from '@/components/ui/toast';
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Lock, Bell, Globe, Moon, Sun, Monitor, Save, Mail, Phone } from "lucide-react";
+import { account } from "@/lib/appwrite";
+import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/toast"; // to'g'ri import (shadcn/ui toast)
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [passwordData, setPasswordData] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
     sms: false,
   });
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
   const router = useRouter();
 
   useEffect(() => {
     checkAuth();
-    // Load saved preferences from localStorage
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' || 'system';
+    const savedTheme =
+      (localStorage.getItem("theme") as "light" | "dark" | "system") ||
+      "system";
     setTheme(savedTheme);
     applyTheme(savedTheme);
   }, []);
@@ -45,50 +44,55 @@ export default function SettingsPage() {
     try {
       await account.get();
     } catch (error) {
-      router.push('/auth');
+      router.push("/auth");
     } finally {
       setLoading(false);
     }
   };
 
-  const applyTheme = (newTheme: 'light' | 'dark' | 'system') => {
-    if (newTheme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', prefersDark);
+  const applyTheme = (newTheme: "light" | "dark" | "system") => {
+    if (newTheme === "system") {
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
     } else {
-      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      document.documentElement.classList.toggle("dark", newTheme === "dark");
     }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('Yangi parollar mos kelmaydi');
+      toast.error("Yangi parollar mos kelmaydi");
       return;
     }
 
     if (passwordData.newPassword.length < 8) {
-      toast.error('Parol kamida 8 ta belgidan iborat bo\'lishi kerak');
+      toast.error("Parol kamida 8 ta belgidan iborat bo'lishi kerak");
       return;
     }
 
     try {
-      await account.updatePassword(passwordData.newPassword, passwordData.oldPassword);
-      toast.success('Parol muvaffaqiyatli o\'zgartirildi');
+      await account.updatePassword(
+        passwordData.newPassword,
+        passwordData.oldPassword
+      );
+      toast.success("Parol muvaffaqiyatli o'zgartirildi");
       setPasswordData({
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
     } catch (error: any) {
-      toast.error(error.message || 'Xatolik yuz berdi');
+      toast.error(error.message || "Parolni o'zgartirishda xatolik yuz berdi");
     }
   };
 
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
   };
 
@@ -96,249 +100,327 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 dark:border-slate-50 mx-auto"></div>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">Yuklanmoqda...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Yuklanmoqda...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
           Sozlamalar
         </h1>
-        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Ilova sozlamalarini boshqaring
+        <p className="mt-2 text-muted-foreground">
+          Ilova sozlamalarini shaxsiy ehtiyojlaringizga moslang
         </p>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
-        {/* Password Settings */}
-        <Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Parol o'zgartirish */}
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center">
-              <Lock className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              <CardTitle>Parol</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                <Lock className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Parolni o'zgartirish</CardTitle>
+                <CardDescription>
+                  Hisobingiz xavfsizligini ta'minlang
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription>
-              Parolingizni o'zgartiring
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
-                <Label htmlFor="oldPassword">Joriy Parol</Label>
+                <Label htmlFor="oldPassword">Joriy parol</Label>
                 <Input
                   id="oldPassword"
                   type="password"
                   value={passwordData.oldPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      oldPassword: e.target.value,
+                    })
+                  }
                   required
-                  placeholder="Joriy parolingizni kiriting"
+                  placeholder="••••••••"
+                  className="mt-2"
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword">Yangi Parol</Label>
+                <Label htmlFor="newPassword">Yangi parol</Label>
                 <Input
                   id="newPassword"
                   type="password"
                   value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: e.target.value,
+                    })
+                  }
                   required
                   minLength={8}
-                  placeholder="Yangi parol (min 8 belgi)"
+                  placeholder="Kamida 8 belgi"
+                  className="mt-2"
                 />
               </div>
               <div>
-                <Label htmlFor="confirmPassword">Yangi Parolni Tasdiqlash</Label>
+                <Label htmlFor="confirmPassword">
+                  Yangi parolni tasdiqlash
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
                   required
-                  placeholder="Yangi parolni qayta kiriting"
+                  placeholder="Yana bir marta kiriting"
+                  className="mt-2"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                Parolni O'zgartirish
+              <Button type="submit" className="w-full" size="lg">
+                <Save className="mr-2 h-5 w-5" />
+                Parolni yangilash
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        {/* Theme Settings */}
-        <Card>
+        {/* Tema tanlash */}
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center">
-              {theme === 'dark' ? (
-                <Moon className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              ) : theme === 'light' ? (
-                <Sun className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              ) : (
-                <SettingsIcon className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              )}
-              <CardTitle>Tema</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                <Monitor className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Ilova temi</CardTitle>
+                <CardDescription>
+                  Ko'rinishni o'zingizga qulay qiling
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription>
-              Ilova ko'rinishini tanlang
-            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <button
+              onClick={() => handleThemeChange("light")}
+              className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
+                theme === "light"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                  : "border-border hover:border-blue-300 dark:hover:border-blue-700 hover:bg-muted/50"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                  <Sun className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Yorug' tema</p>
+                  <p className="text-sm text-muted-foreground">
+                    Kun davomida qulay
+                  </p>
+                </div>
+              </div>
+              {theme === "light" && (
+                <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleThemeChange("dark")}
+              className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
+                theme === "dark"
+                  ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
+                  : "border-border border-slate-500 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-muted/50"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                  <Moon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Qorong'u tema</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ko'zlar uchun qulay
+                  </p>
+                </div>
+              </div>
+              {theme === "dark" && (
+                <div className="h-3 w-3 rounded-full bg-purple-600"></div>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleThemeChange("system")}
+              className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
+                theme === "system"
+                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                  : "border-border border-slate-500 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-muted/50"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                  <Monitor className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Tizim bo'yicha</p>
+                  <p className="text-sm text-muted-foreground">
+                    Qurilma sozlamasiga mos
+                  </p>
+                </div>
+              </div>
+              {theme === "system" && (
+                <div className="h-3 w-3 rounded-full bg-emerald-600"></div>
+              )}
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* Bildirishnomalar */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Bildirishnomalar</CardTitle>
+                <CardDescription>
+                  Muhim yangiliklardan xabardor bo'ling
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                  <Mail className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-medium">Email bildirishnomalari</p>
+                  <p className="text-sm text-muted-foreground">
+                    Hisob faoliyati haqida
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setNotifications({
+                    ...notifications,
+                    email: !notifications.email,
+                  })
+                }
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                  notifications.email ? "bg-emerald-600" : "bg-muted"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                    notifications.email ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-medium">Push bildirishnomalari</p>
+                  <p className="text-sm text-muted-foreground">
+                    Brauzer orqali
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setNotifications({
+                    ...notifications,
+                    push: !notifications.push,
+                  })
+                }
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                  notifications.push ? "bg-blue-600" : "bg-muted"
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                    notifications.push ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                  <Phone className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="font-medium">SMS bildirishnomalari</p>
+                  <p className="text-sm text-muted-foreground">Tez orada</p>
+                </div>
+              </div>
+              <button
+                disabled
+                className="relative inline-flex h-7 w-12 items-center rounded-full bg-muted opacity-50"
+              >
+                <span className="inline-block h-5 w-5 translate-x-1 rounded-full bg-white" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Til tanlash */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                <Globe className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Ilova tili</CardTitle>
+                <CardDescription>
+                  Hozircha faqat o'zbek tili mavjud
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <button
-                onClick={() => handleThemeChange('light')}
-                className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                  theme === 'light'
-                    ? 'border-slate-900 dark:border-slate-50 bg-slate-100 dark:bg-slate-800'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Sun className="h-5 w-5 mr-3 text-slate-600 dark:text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-slate-50">Yorug'</span>
+              <div className="flex items-center justify-between p-5 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                    <Globe className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">O'zbekcha (Ўзбекча)</p>
+                    <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                      Joriy til
+                    </p>
+                  </div>
                 </div>
-                {theme === 'light' && (
-                  <div className="h-2 w-2 rounded-full bg-slate-900 dark:bg-slate-50"></div>
-                )}
-              </button>
-              <button
-                onClick={() => handleThemeChange('dark')}
-                className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                  theme === 'dark'
-                    ? 'border-slate-900 dark:border-slate-50 bg-slate-100 dark:bg-slate-800'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <Moon className="h-5 w-5 mr-3 text-slate-600 dark:text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-slate-50">Qorong'u</span>
-                </div>
-                {theme === 'dark' && (
-                  <div className="h-2 w-2 rounded-full bg-slate-900 dark:bg-slate-50"></div>
-                )}
-              </button>
-              <button
-                onClick={() => handleThemeChange('system')}
-                className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                  theme === 'system'
-                    ? 'border-slate-900 dark:border-slate-50 bg-slate-100 dark:bg-slate-800'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900'
-                }`}
-              >
-                <div className="flex items-center">
-                  <SettingsIcon className="h-5 w-5 mr-3 text-slate-600 dark:text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-slate-50">Tizim</span>
-                </div>
-                {theme === 'system' && (
-                  <div className="h-2 w-2 rounded-full bg-slate-900 dark:bg-slate-50"></div>
-                )}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="h-3 w-3 rounded-full bg-emerald-600"></div>
+              </div>
 
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center">
-              <Bell className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              <CardTitle>Bildirishnomalar</CardTitle>
-            </div>
-            <CardDescription>
-              Bildirishnomalar sozlamalari
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-50">Email bildirishnomalari</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Email orqali yangilanishlar haqida xabar oling
-                  </p>
-                </div>
-                <button
-                  onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    notifications.email ? 'bg-slate-900 dark:bg-slate-50' : 'bg-slate-200 dark:bg-slate-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      notifications.email ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+              <div className="p-5 rounded-xl border border-dashed border-muted-foreground/30 text-center text-muted-foreground">
+                <p className="text-sm">Boshqa tillar tez orada qo'shiladi</p>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-50">Push bildirishnomalari</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Brauzer push bildirishnomalari
-                  </p>
-                </div>
-                <button
-                  onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    notifications.push ? 'bg-slate-900 dark:bg-slate-50' : 'bg-slate-200 dark:bg-slate-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      notifications.push ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-50">SMS bildirishnomalari</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    SMS orqali muhim xabarlar
-                  </p>
-                </div>
-                <button
-                  onClick={() => setNotifications({ ...notifications, sms: !notifications.sms })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    notifications.sms ? 'bg-slate-900 dark:bg-slate-50' : 'bg-slate-200 dark:bg-slate-700'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      notifications.sms ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Language */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center">
-              <Globe className="h-5 w-5 mr-2 text-slate-600 dark:text-slate-400" />
-              <CardTitle>Til</CardTitle>
-            </div>
-            <CardDescription>
-              Ilova tilini tanlang
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <button className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                <span className="font-medium text-slate-900 dark:text-slate-50">O'zbekcha</span>
-                <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">(Tanlangan)</span>
-              </button>
-              <button className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors opacity-50">
-                <span className="font-medium text-slate-900 dark:text-slate-50">English</span>
-                <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">(Tez orada)</span>
-              </button>
             </div>
           </CardContent>
         </Card>
@@ -346,4 +428,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

@@ -1,24 +1,36 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Store, 
-  DollarSign, 
-  Users, 
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  TrendingUp,
+  TrendingDown,
+  Store,
+  DollarSign,
+  Users,
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
   Building2,
   CreditCard,
-  Settings
-} from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
-import { databases, DATABASE_ID, BUSINESSES_COLLECTION_ID, TRANSACTIONS_COLLECTION_ID, Query } from '@/lib/appwrite';
-import { useRouter } from 'next/navigation';
-import { account } from '@/lib/appwrite';
+  Settings,
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import {
+  databases,
+  DATABASE_ID,
+  BUSINESSES_COLLECTION_ID,
+  TRANSACTIONS_COLLECTION_ID,
+  Query,
+} from "@/lib/appwrite";
+import { useRouter } from "next/navigation";
+import { account } from "@/lib/appwrite";
 
 interface Stats {
   totalBusinesses: number;
@@ -56,18 +68,18 @@ export default function Dashboard() {
     try {
       await account.get();
     } catch (error) {
-      router.push('/auth');
+      router.push("/auth");
     }
   };
 
   const loadStats = async () => {
     try {
       const userId = (await account.get()).$id;
-      
+
       const businesses = await databases.listDocuments(
         DATABASE_ID,
         BUSINESSES_COLLECTION_ID,
-        [Query.equal('userId', userId)]
+        [Query.equal("userId", userId)]
       );
 
       const now = new Date();
@@ -78,7 +90,7 @@ export default function Dashboard() {
       const allTransactions = await databases.listDocuments(
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
-        [Query.equal('userId', userId)]
+        [Query.equal("userId", userId)]
       );
 
       const dailyTransactions = allTransactions.documents.filter(
@@ -111,10 +123,14 @@ export default function Dashboard() {
       );
 
       const uniqueCustomers = new Set(
-        allTransactions.documents.map((t: any) => t.customerId || t.customerName)
+        allTransactions.documents.map(
+          (t: any) => t.customerId || t.customerName
+        )
       ).size;
 
-      const lastMonthStart = new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const lastMonthStart = new Date(
+        monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000
+      );
       const lastMonthTransactions = allTransactions.documents.filter(
         (t: any) => {
           const date = new Date(t.date);
@@ -125,9 +141,10 @@ export default function Dashboard() {
         (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
         0
       );
-      const revenueChange = lastMonthRevenue > 0 
-        ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
-        : 0;
+      const revenueChange =
+        lastMonthRevenue > 0
+          ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+          : 0;
 
       setStats({
         totalBusinesses: businesses.total,
@@ -140,7 +157,7 @@ export default function Dashboard() {
         businessesChange: 0,
       });
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error("Error loading stats:", error);
     } finally {
       setLoading(false);
     }
@@ -178,7 +195,9 @@ export default function Dashboard() {
             <DollarSign className="h-5 w-5 text-white" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+            <div className="text-3xl font-bold">
+              {formatCurrency(stats.totalRevenue)}
+            </div>
             <p className="text-xs text-white/80 mt-2 flex items-center">
               {stats.revenueChange >= 0 ? (
                 <>
@@ -229,7 +248,9 @@ export default function Dashboard() {
             <Calendar className="h-5 w-5 text-white" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrency(stats.dailyRevenue)}</div>
+            <div className="text-3xl font-bold">
+              {formatCurrency(stats.dailyRevenue)}
+            </div>
             <p className="text-xs text-white/80 mt-2">Bugungi tranzaksiyalar</p>
           </CardContent>
         </Card>
@@ -305,46 +326,56 @@ export default function Dashboard() {
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader>
           <CardTitle className="text-2xl">Tezkor Amallar</CardTitle>
-          <CardDescription>Ko'p ishlatiladigan funksiyalarga tezkor kirish</CardDescription>
+          <CardDescription>
+            Ko'p ishlatiladigan funksiyalarga tezkor kirish
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <a
               href="/businesses"
-              className="flex items-center p-6 rounded-xl border border-border hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all group"
+              className="flex items-center p-6 rounded-xl border border-slate-500 border-border hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all group"
             >
               <div className="p-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors">
                 <Store className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="ml-4">
                 <div className="font-semibold text-lg">Biznes Qo'shish</div>
-                <div className="text-sm text-muted-foreground">Yangi biznes yoki do'kon qo'shing</div>
+                <div className="text-sm text-muted-foreground">
+                  Yangi biznes yoki do'kon qo'shing
+                </div>
               </div>
             </a>
 
             <a
               href="/transactions/new" // Tranzaksiya qo'shish sahifasiga moslang
-              className="flex items-center p-6 rounded-xl border border-border hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all group"
+              className="flex items-center p-6 rounded-xl border border-slate-500 border-border hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all group"
             >
               <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/50 transition-colors">
                 <CreditCard className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <div className="font-semibold text-lg">Tranzaksiya Qo'shish</div>
-                <div className="text-sm text-muted-foreground">Yangi daromad yoki xarajat qo'shing</div>
+                <div className="font-semibold text-lg">
+                  Tranzaksiya Qo'shish
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Yangi daromad yoki xarajat qo'shing
+                </div>
               </div>
             </a>
 
             <a
               href="/settings"
-              className="flex items-center p-6 rounded-xl border border-border hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all group"
+              className="flex items-center p-6 rounded-xl border border-slate-500 border-border hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all group"
             >
               <div className="p-4 rounded-full bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/50 transition-colors">
                 <Settings className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
                 <div className="font-semibold text-lg">Sozlamalar</div>
-                <div className="text-sm text-muted-foreground">Hisob va sozlamalarni boshqaring</div>
+                <div className="text-sm text-muted-foreground">
+                  Hisob va sozlamalarni boshqaring
+                </div>
               </div>
             </a>
           </div>
