@@ -216,7 +216,7 @@ export default function BusinessDetailPage() {
     "bg-card border-border shadow-sm rounded-3xl overflow-hidden";
 
   return (
-    <div className="max-w-dvw mx-auto space-y-4 py-6 px-0 lg:px-4">
+    <div className="max-w-dvw mx-auto space-y-4  px-0 lg:px-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
