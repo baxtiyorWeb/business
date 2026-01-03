@@ -15,8 +15,6 @@ import {
   DollarSign,
   Users,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
   Building2,
   CreditCard,
   Settings,
@@ -107,32 +105,48 @@ export default function Dashboard() {
         [Query.equal("userId", userId)]
       );
 
+      // Kunlik daromad (xarajatlar bilan)
       const dailyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= today
       );
       const dailyRevenue = dailyTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+        (sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        },
         0
       );
 
+      // Haftalik daromad (xarajatlar bilan)
       const weeklyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= weekAgo
       );
       const weeklyRevenue = weeklyTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+        (sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        },
         0
       );
 
+      // Oylik daromad (xarajatlar bilan)
       const monthlyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= monthAgo
       );
       const monthlyRevenue = monthlyTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+        (sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        },
         0
       );
 
+      // Jami daromad (xarajatlar bilan)
       const totalRevenue = allTransactions.documents.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+        (sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        },
         0
       );
 
@@ -142,29 +156,36 @@ export default function Dashboard() {
         )
       ).size;
 
-      // Chart uchun oxirgi 7 kunlik ma'lumotlar
+      // Chart uchun oxirgi 7 kunlik ma'lumotlar (xarajatlar bilan)
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+        
         const dayTransactions = allTransactions.documents.filter((t: any) => {
           const tDate = new Date(t.date);
-          return (
-            tDate.getDate() === date.getDate() &&
-            tDate.getMonth() === date.getMonth() &&
-            tDate.getFullYear() === date.getFullYear()
-          );
+          return tDate >= dayStart && tDate < dayEnd;
         });
+        
         const dayRevenue = dayTransactions.reduce(
-          (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+          (sum: number, t: any) => {
+            const amount = parseFloat(t.amount) || 0;
+            return sum + (t.type === "expense" ? -amount : amount);
+          },
           0
         );
+        
         last7Days.push({
           day: date.toLocaleDateString("uz-UZ", { weekday: "short" }),
+          fullDate: date.toLocaleDateString("uz-UZ"),
           revenue: dayRevenue,
+          count: dayTransactions.length,
         });
       }
       setChartData(last7Days);
 
+      // O'tgan oy bilan taqqoslash (xarajatlar bilan)
       const lastMonthStart = new Date(
         monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000
       );
@@ -175,13 +196,16 @@ export default function Dashboard() {
         }
       );
       const lastMonthRevenue = lastMonthTransactions.reduce(
-        (sum: number, t: any) => sum + (parseFloat(t.amount) || 0),
+        (sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        },
         0
       );
       const revenueChange =
         lastMonthRevenue > 0
           ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-          : 0;
+          : monthlyRevenue > 0 ? 100 : 0;
 
       setStats({
         totalBusinesses: businesses.total,
@@ -231,7 +255,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-                Jami Daromad
+                Jami Balans
               </CardTitle>
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
                 <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
@@ -254,7 +278,7 @@ export default function Dashboard() {
                 <>
                   <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-red-600" />
                   <span className="text-red-600">
-                    -{Math.abs(stats.revenueChange)}%
+                    {stats.revenueChange}%
                   </span>
                 </>
               )}
@@ -320,7 +344,7 @@ export default function Dashboard() {
               {formatCurrency(stats.dailyRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
-              Bugungi daromad
+              Bugungi balans
             </p>
           </CardContent>
         </Card>
@@ -335,7 +359,7 @@ export default function Dashboard() {
               <div>
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-600" />
-                  Haftalik Daromad
+                  Haftalik Balans
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm mt-1">
                   Oxirgi 7 kunlik statistika
@@ -364,7 +388,8 @@ export default function Dashboard() {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
                   }}
-                  formatter={(value: any) => formatCurrency(value)}
+                  formatter={(value: any) => [formatCurrency(value), "Balans"]}
+                  labelFormatter={(label) => `${label}`}
                 />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[8, 8, 0, 0]} />
               </BarChart>
@@ -382,7 +407,7 @@ export default function Dashboard() {
                   Oylik Trend
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm mt-1">
-                  Oxirgi 30 kunlik o'sish
+                  Oxirgi 7 kunlik o'sish
                 </CardDescription>
               </div>
               <div className="text-right">
@@ -408,7 +433,8 @@ export default function Dashboard() {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
                   }}
-                  formatter={(value: any) => formatCurrency(value)}
+                  formatter={(value: any) => [formatCurrency(value), "Balans"]}
+                  labelFormatter={(label) => `${label}`}
                 />
                 <Line
                   type="monotone"
