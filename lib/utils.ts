@@ -14,24 +14,14 @@ export function formatCurrency(amount: number): string {
 }
 // utils.ts (Yangilangan kod)
 export function formatDate(date: Date | string | null | undefined): string {
-  // 1. Kirish qiymatini tekshirish
-  if (!date) {
-    return "Noma'lum sana"; // Yoki bo'sh qator: ''
-  }
+  if (!date) return "Noma'lum sana";
 
-  // 2. Sana obyektini yaratish
-  const dateObject = new Date(date);
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "Yaroqsiz sana";
 
-  // 3. Agar yaratilgan sana obyektining qiymati noto'g'ri bo'lsa (Invalid Date), xatoni ushlash
-  if (isNaN(dateObject.getTime())) {
-    console.error("Noto'g'ri sana formati aniqlandi:", date);
-    return "Yaroqsiz sana";
-  }
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
 
-  // 4. Sanani formatlash
-  return new Intl.DateTimeFormat("uz-UZ", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(dateObject);
+  return `${day}.${month}.${year}`; // 👉 03.01.2026
 }

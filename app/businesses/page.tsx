@@ -11,7 +11,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  DollarSign,
   MapPin,
   Phone,
   Mail,
@@ -20,6 +19,8 @@ import {
   Building2,
   Briefcase,
   GraduationCap,
+  MoreVertical,
+  Calendar,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import {
@@ -42,7 +43,7 @@ interface Business {
   email?: string;
   description?: string;
   userId: string;
-  createdAt: string;
+  $createdAt?: string;
 }
 
 export default function BusinessesPage() {
@@ -51,6 +52,7 @@ export default function BusinessesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "store" as "store" | "business" | "education",
@@ -64,6 +66,13 @@ export default function BusinessesPage() {
   useEffect(() => {
     checkAuth();
     loadBusinesses();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveDropdown(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const checkAuth = async () => {
@@ -179,14 +188,43 @@ export default function BusinessesPage() {
   const getTypeConfig = (type: string) => {
     switch (type) {
       case "store":
-        return { label: "Do'kon", icon: Store, color: "emerald" };
+        return {
+          label: "Do'kon",
+          icon: Store,
+          color:
+            "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
+        };
       case "business":
-        return { label: "Biznes", icon: Briefcase, color: "blue" };
+        return {
+          label: "Biznes",
+          icon: Briefcase,
+          color:
+            "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
+        };
       case "education":
-        return { label: "O'quv Markazi", icon: GraduationCap, color: "purple" };
+        return {
+          label: "O'quv Markazi",
+          icon: GraduationCap,
+          color:
+            "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400",
+        };
       default:
-        return { label: type, icon: Building2, color: "slate" };
+        return {
+          label: type,
+          icon: Building2,
+          color:
+            "bg-slate-50 text-slate-700 dark:bg-slate-950/30 dark:text-slate-400",
+        };
     }
+  };
+
+  const handleRowClick = (businessId: string) => {
+    router.push(`/businesses/${businessId}`);
+  };
+
+  const handleActionClick = (e: React.MouseEvent, businessId: string) => {
+    e.stopPropagation();
+    setActiveDropdown(activeDropdown === businessId ? null : businessId);
   };
 
   if (loading) {
@@ -201,16 +239,15 @@ export default function BusinessesPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-4 px-5 sm:px-0 lg:px-0 sm:space-y-6 w-full max-w-full ">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Bizneslar</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Barcha bizneslaringizni boshqaring
-          </p>
-        </div>
-        <Button size="lg" onClick={() => openModal()} className="w-full sm:w-auto">
+        <div></div>
+        <Button
+          size="lg"
+          onClick={() => openModal()}
+          className="w-full sm:w-auto"
+        >
           <Plus className="mr-2 h-5 w-5" />
           Yangi Biznes
         </Button>
@@ -218,12 +255,12 @@ export default function BusinessesPage() {
 
       {/* Search */}
       <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+        <Search className="absolute  left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
         <Input
           placeholder="Qidirish..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 sm:pl-10 h-10 sm:h-12 w-full"
+          className="pl-9 sm:pl-10 h-10 sm:h-12 w-1/4"
         />
       </div>
 
@@ -243,7 +280,11 @@ export default function BusinessesPage() {
                 : "Birinchi biznesingizni qoʻshing va daromadlarni kuzatishni boshlang"}
             </p>
             {!searchQuery && (
-              <Button size="lg" onClick={() => openModal()} className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                onClick={() => openModal()}
+                className="w-full sm:w-auto"
+              >
                 <Plus className="mr-2 h-5 w-5" />
                 Birinchi Biznesni Qo'shish
               </Button>
@@ -251,98 +292,258 @@ export default function BusinessesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-          {filteredBusinesses.map((business) => {
-            const { label } = getTypeConfig(business.type);
+        <>
+          {/* Desktop Table View - Hidden on mobile */}
+          <div className="hidden md:block">
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b bg-muted/50">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-sm">
+                        Biznes
+                      </th>
+                      <th className="text-left p-4 font-semibold text-sm">
+                        Turi
+                      </th>
+                      <th className="text-left p-4 font-semibold text-sm">
+                        Aloqa
+                      </th>
+                      <th className="text-left p-4 font-semibold text-sm">
+                        Manzil
+                      </th>
+                      <th className="text-left p-4 font-semibold text-sm">
+                        Sana
+                      </th>
+                      <th className="text-right p-4 font-semibold text-sm">
+                        Amallar
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBusinesses.map((business) => {
+                      const {
+                        label,
+                        icon: Icon,
+                        color,
+                      } = getTypeConfig(business.type);
 
-            return (
-              <Card
-                key={business.$id}
-                className="overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col"
-              >
-                <CardHeader className="pb-3 sm:pb-4">
-                  <div className="flex justify-between items-start gap-2 sm:gap-3">
-                    <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base sm:text-lg font-semibold leading-tight line-clamp-2">
-                          {business.name}
-                        </CardTitle>
-                        <Badge variant="secondary" className="mt-1.5 text-xs">
-                          {label}
-                        </Badge>
+                      return (
+                        <tr
+                          key={business.$id}
+                          onClick={() => handleRowClick(business.$id)}
+                          className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`p-2 rounded-lg ${
+                                  color.split(" ")[0]
+                                } ${color.split(" ")[1]}`}
+                              >
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">
+                                  {business.name}
+                                </div>
+                                {business.description && (
+                                  <div className="text-sm text-muted-foreground line-clamp-1 max-w-xs">
+                                    {business.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="secondary" className={color}>
+                              {label}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            <div className="space-y-1 text-sm">
+                              {business.phone && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Phone className="h-3.5 w-3.5" />
+                                  <span>{business.phone}</span>
+                                </div>
+                              )}
+                              {business.email && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Mail className="h-3.5 w-3.5" />
+                                  <span className="truncate max-w-[200px]">
+                                    {business.email}
+                                  </span>
+                                </div>
+                              )}
+                              {!business.phone && !business.email && (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {business.address ? (
+                              <div className="flex items-start gap-2 text-sm text-muted-foreground max-w-xs">
+                                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                <span className="line-clamp-2">
+                                  {business.address}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {formatDate(business?.$createdAt)}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openModal(business);
+                                }}
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(business.$id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+
+          {/* Mobile Card View - Visible only on mobile */}
+          <div className="md:hidden grid gap-4">
+            {filteredBusinesses.map((business) => {
+              const { label, icon: Icon, color } = getTypeConfig(business.type);
+
+              return (
+                <Card
+                  key={business.$id}
+                  className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => handleRowClick(business.$id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`p-2 rounded-lg ${color}`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base line-clamp-1">
+                            {business.name}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            className={`mt-1.5 text-xs ${color}`}
+                          >
+                            {label}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => handleActionClick(e, business.$id)}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+
+                        {activeDropdown === business.$id && (
+                          <div className="absolute right-0 mt-1 w-40 bg-background border rounded-lg shadow-lg z-10">
+                            <button
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openModal(business);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 text-blue-600" />
+                              Tahrirlash
+                            </button>
+                            <button
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-t"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(business.$id);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                              O'chirish
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 sm:h-10 sm:w-10"
-                        onClick={() => openModal(business)}
-                      >
-                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 sm:h-10 sm:w-10"
-                        onClick={() => handleDelete(business.$id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
-                      </Button>
+                    {business.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        {business.description}
+                      </p>
+                    )}
+
+                    <div className="space-y-2 text-sm">
+                      {business.address && (
+                        <div className="flex items-start gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">
+                            {business.address}
+                          </span>
+                        </div>
+                      )}
+                      {business.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-4 w-4 shrink-0" />
+                          <span>{business.phone}</span>
+                        </div>
+                      )}
+                      {business.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{business.email}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-muted-foreground pt-2 border-t">
+                        <Calendar className="h-4 w-4 shrink-0" />
+                        <span>{formatDate(business?.$createdAt)}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex-1 flex flex-col justify-between pt-0 space-y-3 sm:space-y-4">
-                  {business.description && (
-                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                      {business.description}
-                    </p>
-                  )}
-
-                  <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-muted-foreground">
-                    {business.address && (
-                      <div className="flex items-start gap-2 sm:gap-3">
-                        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600 shrink-0 mt-0.5" />
-                        <span className="line-clamp-2 break-words">{business.address}</span>
-                      </div>
-                    )}
-                    {business.phone && (
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 shrink-0" />
-                        <span className="truncate">{business.phone}</span>
-                      </div>
-                    )}
-                    {business.email && (
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 shrink-0" />
-                        <span className="truncate">{business.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(business.createdAt)}
-                    </p>
-                    <Button
-                      size="sm"
-                      className="w-full sm:w-auto"
-                      onClick={() => router.push(`/businesses/${business.$id}`)}
-                    >
-                      <DollarSign className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      Batafsil
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      {/* Modal - To'liq responsive */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none">
@@ -362,7 +563,7 @@ export default function BusinessesPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6 pb-4 sm:pb-6">
-              <div className="space-y-4 sm:space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 <div>
                   <Label htmlFor="name" className="text-sm sm:text-base">
                     Biznes Nomi *
@@ -465,14 +666,11 @@ export default function BusinessesPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
-                  <Button
-                    onClick={handleSubmit}
-                    size="lg"
-                    className="flex-1 h-11"
-                  >
+                  <Button type="submit" size="lg" className="flex-1 h-11">
                     {editingBusiness ? "Saqlash" : "Qo'shish"}
                   </Button>
                   <Button
+                    type="button"
                     variant="outline"
                     size="lg"
                     className="h-11"
@@ -481,7 +679,7 @@ export default function BusinessesPage() {
                     Bekor qilish
                   </Button>
                 </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </div>

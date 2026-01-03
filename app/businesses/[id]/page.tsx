@@ -211,16 +211,17 @@ export default function BusinessDetailPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex justify-start items-start space-x-2 sm:space-x-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/businesses")}
+            className=" relative -top-1"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-slate-50 truncate">
+            <h1 className="text-xl sm:text-2xl lg:text-xl font-bold text-slate-900 dark:text-slate-50 truncate">
               {business.name}
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-1">

@@ -239,15 +239,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
-          Dashboard
-        </h1>
-        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-muted-foreground">
-          Biznesingizning umumiy ko'rinishi
-        </p>
-      </div>
+    
 
       {/* Main Stats Cards - Professional va yengil ranglar */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
