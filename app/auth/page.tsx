@@ -87,10 +87,8 @@ export default function AuthPage() {
       <div className="w-full max-w-[420px] space-y-6">
         {/* Logo & Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-primary/10 text-primary mb-2">
-            <Sparkles className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          
+          <h1 className="text-xl sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">
             {authMode === "login"
               ? "Tizimga kirish"
               : authMode === "signup"
