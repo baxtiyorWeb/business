@@ -249,7 +249,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden px-4 sm:px-6 lg:px-8">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden px-0 sm:px-0 lg:px-0">
       {/* Main Stats Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
@@ -264,8 +264,8 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-              {formatCurrency(stats.totalRevenue)}
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+              {formatCurrency(stats.totalRevenue).split('UZS')}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 flex items-center">
               {stats.revenueChange >= 0 ? (
@@ -297,7 +297,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
               {stats.totalBusinesses}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -318,7 +318,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
               {stats.totalCustomers}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -339,7 +339,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
               {formatCurrency(stats.dailyRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">

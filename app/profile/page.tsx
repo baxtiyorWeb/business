@@ -199,7 +199,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-dvw mx-auto space-y-6 px-4 pb-20">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden px-0 sm:px-0 lg:px-0">
       {/* Header & Avatar Section */}
       <div className="flex flex-col items-center sm:flex-row sm:items-end gap-5">
         <div className="relative group">

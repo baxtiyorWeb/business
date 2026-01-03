@@ -97,7 +97,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-dvw mx-auto space-y-4 px-0 py-0 ">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden px-0 sm:px-0 lg:px-0">
       <div className="text-center sm:text-left">
         <h1 className="text-3xl font-bold tracking-tight">Sozlamalar</h1>
         <p className="text-muted-foreground mt-2">
