@@ -109,17 +109,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-          Sozlamalar
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Ilova sozlamalarini shaxsiy ehtiyojlaringizga moslang
-        </p>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Parol o'zgartirish */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -198,7 +188,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Tema tanlash */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -288,7 +277,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Bildirishnomalar */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -386,7 +374,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Til tanlash */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex items-center gap-3">

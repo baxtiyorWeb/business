@@ -126,7 +126,7 @@ export function Navigation() {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex md:items-center md:ml-4 md:gap-2">
-              {/* Premium Button */}
+              {/* Premium Button
               <Link href="/pricing">
                 <Button
                   size="sm"
@@ -135,7 +135,7 @@ export function Navigation() {
                   <Crown className="mr-2 h-4 w-4" />
                   <span className="hidden lg:inline">Premium</span>
                 </Button>
-              </Link>
+              </Link> */}
 
               <Button
                 variant="ghost"
@@ -205,7 +205,7 @@ export function Navigation() {
                 </div>
 
                 {/* Premium Banner Mobile */}
-                <div className="p-4">
+                {/* <div className="p-4">
                   <Link
                     href="/pricing"
                     onClick={() => setMobileMenuOpen(false)}
@@ -223,7 +223,7 @@ export function Navigation() {
                       <Sparkles className="absolute -right-2 -bottom-2 h-20 w-20 text-white/20" />
                     </div>
                   </Link>
-                </div>
+                </div> */}
 
                 {/* Mobile menu items */}
                 <div className="flex-1 overflow-y-auto py-2">
