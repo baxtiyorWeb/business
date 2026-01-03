@@ -105,7 +105,6 @@ export default function Dashboard() {
         [Query.equal("userId", userId)]
       );
 
-      // Kunlik daromad (xarajatlar bilan)
       const dailyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= today
       );
@@ -117,7 +116,6 @@ export default function Dashboard() {
         0
       );
 
-      // Haftalik daromad (xarajatlar bilan)
       const weeklyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= weekAgo
       );
@@ -129,7 +127,6 @@ export default function Dashboard() {
         0
       );
 
-      // Oylik daromad (xarajatlar bilan)
       const monthlyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= monthAgo
       );
@@ -141,7 +138,6 @@ export default function Dashboard() {
         0
       );
 
-      // Jami daromad (xarajatlar bilan)
       const totalRevenue = allTransactions.documents.reduce(
         (sum: number, t: any) => {
           const amount = parseFloat(t.amount) || 0;
@@ -156,7 +152,6 @@ export default function Dashboard() {
         )
       ).size;
 
-      // Chart uchun oxirgi 7 kunlik ma'lumotlar (xarajatlar bilan)
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
@@ -185,7 +180,6 @@ export default function Dashboard() {
       }
       setChartData(last7Days);
 
-      // O'tgan oy bilan taqqoslash (xarajatlar bilan)
       const lastMonthStart = new Date(
         monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000
       );

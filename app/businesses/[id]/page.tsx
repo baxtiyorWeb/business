@@ -23,6 +23,7 @@ import {
   X,
   TrendingUp,
   TrendingDown,
+  AlertTriangle,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -65,9 +66,16 @@ export default function BusinessDetailPage() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+
+  // Modals state
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
+    null
+  );
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+
   const [formData, setFormData] = useState({
     amount: "",
     type: "income" as "income" | "expense",
@@ -75,6 +83,7 @@ export default function BusinessDetailPage() {
     customerName: "",
     date: new Date().toISOString().split("T")[0],
   });
+
   const [stats, setStats] = useState({
     totalIncome: 0,
     totalExpense: 0,
@@ -87,9 +96,9 @@ export default function BusinessDetailPage() {
 
   const loadData = async () => {
     try {
-      const userId = (await account.get()).$id;
+      const user = await account.get();
+      const userId = user.$id;
 
-      // Load business
       const businessData = await databases.getDocument(
         DATABASE_ID,
         BUSINESSES_COLLECTION_ID,
@@ -97,7 +106,6 @@ export default function BusinessDetailPage() {
       );
       setBusiness(businessData as unknown as Business);
 
-      // Load transactions
       const transactionsData = await databases.listDocuments(
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
@@ -107,16 +115,17 @@ export default function BusinessDetailPage() {
           Query.orderDesc("date"),
         ]
       );
-      setTransactions(transactionsData.documents as unknown as Transaction[]);
 
-      // Calculate stats
-      const income = transactionsData.documents
-        .filter((t: any) => t.type === "income")
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+      const docs = transactionsData.documents as unknown as Transaction[];
+      setTransactions(docs);
 
-      const expense = transactionsData.documents
-        .filter((t: any) => t.type === "expense")
-        .reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0);
+      const income = docs
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+      const expense = docs
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
       setStats({
         totalIncome: income,
@@ -125,7 +134,7 @@ export default function BusinessDetailPage() {
       });
     } catch (error) {
       console.error("Error loading data:", error);
-      router.push("/businesses");
+      toast.error("Ma'lumotlarni yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -149,6 +158,7 @@ export default function BusinessDetailPage() {
             date: formData.date,
           }
         );
+        toast.success("Muvaffaqiyatli yangilandi");
       } else {
         await databases.createDocument(
           DATABASE_ID,
@@ -160,48 +170,62 @@ export default function BusinessDetailPage() {
             userId,
           }
         );
+        toast.success("Yangi tranzaksiya qo'shildi");
       }
 
-      setShowModal(false);
-      setEditingTransaction(null);
-      setFormData({
-        amount: "",
-        type: "income",
-        description: "",
-        customerName: "",
-        date: new Date().toISOString().split("T")[0],
-      });
+      closeFormModal();
       loadData();
     } catch (error) {
-      console.error("Error saving transaction:", error);
-      toast.error("Xatolik yuz berdi.");
+      console.error("Error saving:", error);
+      toast.error("Saqlashda xatolik yuz berdi");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Bu tranzaksiyani o'chirishni xohlaysizmi?")) return;
-
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
     try {
       await databases.deleteDocument(
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
-        id
+        transactionToDelete
       );
+      toast.success("O'chirildi");
+      setShowDeleteModal(false);
+      setTransactionToDelete(null);
       loadData();
     } catch (error) {
-      console.error("Error deleting transaction:", error);
+      toast.error("O'chirishda xatolik");
     }
+  };
+
+  const openEditModal = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setFormData({
+      amount: transaction.amount,
+      type: transaction.type,
+      description: transaction.description || "",
+      customerName: transaction.customerName || "",
+      date: transaction.date.split("T")[0],
+    });
+    setShowFormModal(true);
+  };
+
+  const closeFormModal = () => {
+    setShowFormModal(false);
+    setEditingTransaction(null);
+    setFormData({
+      amount: "",
+      type: "income",
+      description: "",
+      customerName: "",
+      date: new Date().toISOString().split("T")[0],
+    });
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 dark:border-slate-50 mx-auto"></div>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">
-            Yuklanmoqda...
-          </p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -209,82 +233,65 @@ export default function BusinessDetailPage() {
   if (!business) return null;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-        <div className="flex justify-start items-start space-x-2 sm:space-x-4">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20 px-4 sm:px-0">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 py-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/businesses")}
-            className=" relative -top-1"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-xl font-bold text-slate-900 dark:text-slate-50 truncate">
-              {business.name}
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-1">
-              {business.description || "Tranzaksiyalar va statistika"}
-            </p>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold truncate">
+            {business.name}
+          </h1>
         </div>
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => {
-            setEditingTransaction(null);
-            setFormData({
-              amount: "",
-              type: "income",
-              description: "",
-              customerName: "",
-              date: new Date().toISOString().split("T")[0],
-            });
-            setShowModal(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tranzaksiya Qo'shish
+        <Button onClick={() => setShowFormModal(true)} size="sm">
+          <Plus className="h-4 w-4 mr-1" /> Qo'shish
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Jami Daromad</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
+          <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium">Daromad</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <CardContent className="p-4 pt-0">
+            <div className="text-xl font-bold text-blue-700">
               {formatCurrency(stats.totalIncome)}
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Jami Xarajat</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+        <Card className="bg-red-50 dark:bg-red-950/20 border-red-200">
+          <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium">Xarajat</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+          <CardContent className="p-4 pt-0">
+            <div className="text-xl font-bold text-red-700">
               {formatCurrency(stats.totalExpense)}
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card
+          className={`${
+            stats.balance >= 0
+              ? "bg-emerald-50 border-emerald-200"
+              : "bg-orange-50 border-orange-200"
+          } dark:bg-emerald-950/10`}
+        >
+          <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium">Balans</CardTitle>
-            <DollarSign className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <DollarSign className="h-4 w-4" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <div
-              className={`text-2xl font-bold ${
-                stats.balance >= 0
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-red-600 dark:text-red-400"
+              className={`text-xl font-bold ${
+                stats.balance >= 0 ? "text-emerald-700" : "text-red-600"
               }`}
             >
               {formatCurrency(stats.balance)}
@@ -293,202 +300,171 @@ export default function BusinessDetailPage() {
         </Card>
       </div>
 
-      {/* Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tranzaksiyalar</CardTitle>
-          <CardDescription>Barcha daromad va xarajatlar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {transactions.length === 0 ? (
-            <div className="text-center py-12">
-              <DollarSign className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                Hali tranzaksiya qo'shilmagan
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.$id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors gap-3 sm:gap-0"
-                >
-                  <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-                    <div
-                      className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        transaction.type === "income"
-                          ? "bg-green-100 dark:bg-green-900/20"
-                          : "bg-red-100 dark:bg-red-900/20"
-                      }`}
-                    >
-                      {transaction.type === "income" ? (
-                        <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      ) : (
-                        <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-sm sm:text-base text-slate-900 dark:text-slate-50 truncate">
-                          {transaction.description ||
-                            (transaction.type === "income"
-                              ? "Daromad"
-                              : "Xarajat")}
-                        </p>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full shrink-0 ${
-                            transaction.type === "income"
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-                          }`}
-                        >
-                          {transaction.type === "income"
-                            ? "Daromad"
-                            : "Xarajat"}
+      {/* Transactions List */}
+      <div className="space-y-3">
+        <h3 className="font-semibold text-lg px-1">So'nggi harakatlar</h3>
+        {transactions.length === 0 ? (
+          <div className="text-center py-10 border rounded-xl bg-muted/20">
+            <p className="text-muted-foreground">Hozircha ma'lumot yo'q</p>
+          </div>
+        ) : (
+          transactions.map((t) => (
+            <Card key={t.$id} className="overflow-hidden group">
+              <div className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div
+                    className={`p-2 rounded-full ${
+                      t.type === "income"
+                        ? "bg-emerald-100 text-emerald-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {t.type === "income" ? (
+                      <TrendingUp className="h-5 w-5" />
+                    ) : (
+                      <TrendingDown className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
+                      {t.description ||
+                        (t.type === "income" ? "Daromad" : "Xarajat")}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" /> {formatDate(t.date)}
+                      </span>
+                      {t.customerName && (
+                        <span className="flex items-center gap-1">
+                          <User className="h-3 w-3" /> {t.customerName}
                         </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                        {transaction.customerName && (
-                          <div className="flex items-center">
-                            <User className="h-3 w-3 mr-1 shrink-0" />
-                            <span className="truncate">
-                              {transaction.customerName}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 shrink-0" />
-                          {formatDate(transaction.date)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-0">
-                      <div
-                        className={`text-base sm:text-lg font-bold ${
-                          transaction.type === "income"
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(parseFloat(transaction.amount))}
-                      </div>
-                      <div className="flex items-center space-x-1 sm:space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingTransaction(transaction);
-                            setFormData({
-                              amount: transaction.amount,
-                              type: transaction.type,
-                              description: transaction.description || "",
-                              customerName: transaction.customerName || "",
-                              date: transaction.date.split("T")[0],
-                            });
-                            setShowModal(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(transaction.$id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <Card className="w-full sm:w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-lg">
-            <CardHeader className="sticky top-0 bg-white dark:bg-slate-950 border-b z-10">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg sm:text-xl">
-                  {editingTransaction
-                    ? "Tranzaksiyani Tahrirlash"
-                    : "Yangi Tranzaksiya"}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingTransaction(null);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                <div>
-                  <Label htmlFor="type">Turi *</Label>
-                  <select
-                    id="type"
-                    value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value as any })
-                    }
-                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-                    required
+                <div className="flex flex-col items-end gap-2">
+                  <span
+                    className={`font-bold ${
+                      t.type === "income" ? "text-emerald-600" : "text-red-600"
+                    }`}
                   >
-                    <option value="income">Daromad</option>
-                    <option value="expense">Xarajat</option>
-                  </select>
+                    {t.type === "income" ? "+" : "-"}
+                    {formatCurrency(parseFloat(t.amount))}
+                  </span>
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-blue-600"
+                      onClick={() => openEditModal(t)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-600"
+                      onClick={() => {
+                        setTransactionToDelete(t.$id);
+                        setShowDeleteModal(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="amount">Summa *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) =>
-                      setFormData({ ...formData, amount: e.target.value })
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* --- MODALS --- */}
+
+      {/* 1. Form Modal (Add/Edit) */}
+      {showFormModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-md animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b">
+              <CardTitle>
+                {editingTransaction ? "Tahrirlash" : "Yangi tranzaksiya"}
+              </CardTitle>
+              <Button variant="ghost" size="icon" onClick={closeFormModal}>
+                <X className="h-5 w-5" />
+              </Button>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 pt-6">
+                <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "income" })}
+                    className={`py-2 text-sm font-medium rounded-md transition-all ${
+                      formData.type === "income"
+                        ? "bg-background shadow-sm text-emerald-600"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    Daromad
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, type: "expense" })
                     }
-                    required
-                    placeholder="0.00"
-                  />
+                    className={`py-2 text-sm font-medium rounded-md transition-all ${
+                      formData.type === "expense"
+                        ? "bg-background shadow-sm text-red-600"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    Xarajat
+                  </button>
                 </div>
-                <div>
-                  <Label htmlFor="description">Tavsif</Label>
+
+                <div className="space-y-2">
+                  <Label>Summa</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="number"
+                      className="pl-9 text-lg"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) =>
+                        setFormData({ ...formData, amount: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tavsif</Label>
                   <Input
-                    id="description"
+                    placeholder="Masalan: Mahsulot sotuvi"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    placeholder="Tranzaksiya haqida qisqacha ma'lumot"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="customerName">Mijoz Ismi</Label>
+
+                <div className="space-y-2">
+                  <Label>Mijoz (ixtiyoriy)</Label>
                   <Input
-                    id="customerName"
+                    placeholder="Ism sharifi"
                     value={formData.customerName}
                     onChange={(e) =>
                       setFormData({ ...formData, customerName: e.target.value })
                     }
-                    placeholder="Mijoz ismi (ixtiyoriy)"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="date">Sana *</Label>
+
+                <div className="space-y-2">
+                  <Label>Sana</Label>
                   <Input
-                    id="date"
                     type="date"
                     value={formData.date}
                     onChange={(e) =>
@@ -497,23 +473,54 @@ export default function BusinessDetailPage() {
                     required
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="flex-1">
-                    {editingTransaction ? "Saqlash" : "Qo'shish"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingTransaction(null);
-                    }}
-                  >
-                    Bekor qilish
-                  </Button>
-                </div>
-              </form>
+              </CardContent>
+              <div className="p-6 border-t flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={closeFormModal}
+                >
+                  Bekor qilish
+                </Button>
+                <Button type="submit" className="flex-1">
+                  {editingTransaction ? "Saqlash" : "Qo'shish"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* 2. Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
+          <Card className="w-full max-w-[320px] animate-in fade-in zoom-in-95 duration-200">
+            <CardContent className="pt-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-lg">O'chirishni tasdiqlaysizmi?</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Bu amalni ortga qaytarib bo'lmaydi.
+              </p>
             </CardContent>
+            <div className="p-4 flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Yo'q
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={confirmDelete}
+              >
+                Ha, o'chirilsin
+              </Button>
+            </div>
           </Card>
         </div>
       )}
