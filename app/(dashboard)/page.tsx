@@ -42,6 +42,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import Link from "next/link";
 
 interface Stats {
   totalBusinesses: number;
@@ -108,24 +109,18 @@ export default function Dashboard() {
       const dailyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= today
       );
-      const dailyRevenue = dailyTransactions.reduce(
-        (sum: number, t: any) => {
-          const amount = parseFloat(t.amount) || 0;
-          return sum + (t.type === "expense" ? -amount : amount);
-        },
-        0
-      );
+      const dailyRevenue = dailyTransactions.reduce((sum: number, t: any) => {
+        const amount = parseFloat(t.amount) || 0;
+        return sum + (t.type === "expense" ? -amount : amount);
+      }, 0);
 
       const weeklyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= weekAgo
       );
-      const weeklyRevenue = weeklyTransactions.reduce(
-        (sum: number, t: any) => {
-          const amount = parseFloat(t.amount) || 0;
-          return sum + (t.type === "expense" ? -amount : amount);
-        },
-        0
-      );
+      const weeklyRevenue = weeklyTransactions.reduce((sum: number, t: any) => {
+        const amount = parseFloat(t.amount) || 0;
+        return sum + (t.type === "expense" ? -amount : amount);
+      }, 0);
 
       const monthlyTransactions = allTransactions.documents.filter(
         (t: any) => new Date(t.date) >= monthAgo
@@ -155,22 +150,23 @@ export default function Dashboard() {
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-        const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayStart = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate()
+        );
         const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-        
+
         const dayTransactions = allTransactions.documents.filter((t: any) => {
           const tDate = new Date(t.date);
           return tDate >= dayStart && tDate < dayEnd;
         });
-        
-        const dayRevenue = dayTransactions.reduce(
-          (sum: number, t: any) => {
-            const amount = parseFloat(t.amount) || 0;
-            return sum + (t.type === "expense" ? -amount : amount);
-          },
-          0
-        );
-        
+
+        const dayRevenue = dayTransactions.reduce((sum: number, t: any) => {
+          const amount = parseFloat(t.amount) || 0;
+          return sum + (t.type === "expense" ? -amount : amount);
+        }, 0);
+
         last7Days.push({
           day: date.toLocaleDateString("uz-UZ", { weekday: "short" }),
           fullDate: date.toLocaleDateString("uz-UZ"),
@@ -199,7 +195,9 @@ export default function Dashboard() {
       const revenueChange =
         lastMonthRevenue > 0
           ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-          : monthlyRevenue > 0 ? 100 : 0;
+          : monthlyRevenue > 0
+          ? 100
+          : 0;
 
       setStats({
         totalBusinesses: businesses.total,
@@ -233,8 +231,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
-    
-
       {/* Main Stats Cards - Professional va yengil ranglar */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
@@ -263,9 +259,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-red-600" />
-                  <span className="text-red-600">
-                    {stats.revenueChange}%
-                  </span>
+                  <span className="text-red-600">{stats.revenueChange}%</span>
                 </>
               )}
             </p>
@@ -495,69 +489,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions - Minimal va professional */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Tezkor Amallar</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Ko'p ishlatiladigan funksiyalar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <a
-              href="/businesses"
-              className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-border hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all group"
-            >
-              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/50 transition-colors shrink-0">
-                <Store className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold text-sm sm:text-base">
-                  Biznes Qo'shish
-                </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  Yangi biznes yaratish
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="/transactions/new"
-              className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-border hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all group"
-            >
-              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors shrink-0">
-                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold text-sm sm:text-base">
-                  Tranzaksiya
-                </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  Daromad qo'shish
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="/settings"
-              className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl border border-border hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-all group"
-            >
-              <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors shrink-0">
-                <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold text-sm sm:text-base">
-                  Sozlamalar
-                </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  Hisob sozlash
-                </div>
-              </div>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
