@@ -15,24 +15,19 @@ import {
   EyeOff,
   ChevronLeft,
   Phone,
-  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import { OAuthProvider } from "appwrite";
 
-type AuthMethod = "email" | "phone";
-type AuthMode = "login" | "signup" | "forgot" | "otp";
+type AuthMode = "login" | "signup" | "forgot";
 
 export default function AuthPage() {
-  const [method, setMethod] = useState<AuthMethod>("email");
   const [authMode, setAuthMode] = useState<AuthMode>("login");
 
   // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("+998");
-  const [otpCode, setOtpCode] = useState("");
   const [name, setName] = useState("");
-  const [userId, setUserId] = useState(""); // OTP uchun kerak
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,7 +35,6 @@ export default function AuthPage() {
   const [success, setSuccess] = useState("");
   const router = useRouter();
 
-  // --- EMAIL/PASSWORD LOGIC ---
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,42 +68,6 @@ export default function AuthPage() {
     }
   };
 
-  // --- PHONE AUTH LOGIC (OTP) ---
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      // 1-qadam: SMS yuborish
-      const token = await account.createPhoneToken(ID.unique(), phoneNumber);
-      setUserId(token.userId);
-      setAuthMode("otp");
-      setSuccess("SMS kod yuborildi.");
-    } catch (err: any) {
-      setError("SMS yuborishda xatolik. Raqamni tekshiring.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      // 2-qadam: Kodni tasdiqlash
-      await account.updatePhoneSession(userId, otpCode);
-      setSuccess("Tasdiqlandi! Kirilmoqda...");
-      setTimeout(() => router.push("/"), 1000);
-    } catch (err: any) {
-      setError("Kod noto'g'ri yoki muddati o'tgan.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleAuth = async () => {
     try {
       setLoading(true);
@@ -125,224 +83,159 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 font-sans text-slate-900 dark:text-slate-100">
-      <div className="w-full max-w-[440px] space-y-6">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-[#020617] p-4 font-sans selection:bg-primary/10">
+      <div className="w-full max-w-[420px] space-y-6">
+        {/* Logo & Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {authMode === "otp" ? "Tasdiqlash" : "Xush kelibsiz"}
+          <div className="inline-flex p-3 rounded-2xl bg-primary/10 text-primary mb-2">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            {authMode === "login"
+              ? "Tizimga kirish"
+              : authMode === "signup"
+              ? "Hisob yaratish"
+              : "Parolni tiklash"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            {authMode === "otp"
-              ? `${phoneNumber} raqamiga yuborilgan kodni kiriting`
-              : "Platformaga kirish usulini tanlang"}
+            Barcha moliyaviy biznesingizni bir joyda boshqaring
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl p-6 sm:p-8">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-10 relative overflow-hidden">
           {/* Messages */}
           {error && (
-            <div className="mb-4 flex items-start gap-3 p-3 text-sm bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-xl">
+            <div className="mb-6 flex items-start gap-3 p-4 text-sm bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-2xl animate-in fade-in zoom-in duration-300">
               <AlertCircle className="h-5 w-5 shrink-0" />
-              <p>{error}</p>
+              <p className="font-medium">{error}</p>
             </div>
           )}
           {success && (
-            <div className="mb-4 flex items-start gap-3 p-3 text-sm bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <div className="mb-6 flex items-start gap-3 p-4 text-sm bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl animate-in fade-in zoom-in duration-300">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
-              <p>{success}</p>
+              <p className="font-medium">{success}</p>
             </div>
           )}
 
-          {/* Method Switcher */}
-          {authMode !== "otp" && authMode !== "forgot" && (
-            <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-6">
-              <button
-                onClick={() => setMethod("email")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                  method === "email"
-                    ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white"
-                    : "text-slate-500"
-                }`}
-              >
+          {/* Auth Method Switch (Tez kunda effekti bilan) */}
+          {authMode !== "forgot" && (
+            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl mb-8 relative">
+              <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl bg-white dark:bg-slate-700 shadow-sm text-primary transition-all">
                 <Mail size={16} /> Email
-              </button>
-              <button
-                onClick={() => setMethod("phone")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                  method === "phone"
-                    ? "bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white"
-                    : "text-slate-500"
-                }`}
-              >
+              </div>
+
+              <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed group relative">
                 <Phone size={16} /> Telefon
-              </button>
+                {/* Coming Soon Tooltip/Badge */}
+                <span className="absolute -top-3 -right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg rotate-12 group-hover:rotate-0 transition-transform">
+                  TEZ KUNDA
+                </span>
+              </div>
             </div>
           )}
 
-          {/* Forms */}
-          {authMode === "otp" ? (
-            /* OTP Verification Form */
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium ml-1">SMS Kod</label>
-                <div className="relative">
-                  <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+          {/* Email Auth Form */}
+          <form onSubmit={handleEmailAuth} className="space-y-5">
+            {authMode === "signup" && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1 tracking-wider">
+                  To'liq ism
+                </label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                   <input
                     type="text"
                     required
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary transition-all text-center tracking-[1em] font-bold text-xl"
-                    placeholder="000000"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    placeholder="John Doe"
                   />
                 </div>
               </div>
-              <Button
-                disabled={loading}
-                className="w-full py-6 rounded-xl text-lg"
-              >
-                {loading ? <Loader2 className="animate-spin" /> : "Tasdiqlash"}
-              </Button>
-              <button
-                type="button"
-                onClick={() => setAuthMode("login")}
-                className="w-full text-sm text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
-              >
-                Raqamni o'zgartirish
-              </button>
-            </form>
-          ) : method === "phone" ? (
-            /* Phone Input Form */
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium ml-1">
-                  Telefon raqam
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <input
-                    type="tel"
-                    required
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary transition-all"
-                    placeholder="+998901234567"
-                  />
-                </div>
-              </div>
-              <Button
-                disabled={loading}
-                className="w-full py-6 rounded-xl text-lg"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "Kod yuborish"
-                )}
-              </Button>
-            </form>
-          ) : (
-            /* Email Auth Form */
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              {authMode === "signup" && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <label className="text-sm font-medium ml-1">To'liq ism</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Ismingizni kiriting"
-                    />
-                  </div>
-                </div>
-              )}
+            )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium ml-1">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="example@mail.com"
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase ml-1 tracking-wider">
+                Email Manzil
+              </label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium"
+                  placeholder="name@company.com"
+                />
               </div>
+            </div>
 
-              {authMode !== "forgot" && (
-                <div className="space-y-2">
-                  <div className="flex justify-between ml-1 text-sm font-medium">
-                    <label>Parol</label>
-                    {authMode === "login" && (
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("forgot")}
-                        className="text-primary hover:underline"
-                      >
-                        Unutdingizmi?
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      minLength={8}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="••••••••"
-                    />
+            {authMode !== "forgot" && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between ml-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Parol
+                  </label>
+                  {authMode === "login" && (
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                      onClick={() => setAuthMode("forgot")}
+                      className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      Unutdingizmi?
                     </button>
-                  </div>
+                  )}
                 </div>
-              )}
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
 
-              <Button
-                disabled={loading}
-                className="w-full py-6 rounded-xl text-lg shadow-lg"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin" />
-                ) : authMode === "login" ? (
-                  "Kirish"
-                ) : authMode === "signup" ? (
-                  "Ro'yxatdan o'tish"
-                ) : (
-                  "Yuborish"
-                )}
-              </Button>
-            </form>
-          )}
+            <Button
+              disabled={loading}
+              className="w-full py-7 rounded-2xl text-[16px] font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : authMode === "login" ? (
+                "Tizimga kirish"
+              ) : authMode === "signup" ? (
+                "Ro'yxatdan o'tish"
+              ) : (
+                "Tiklash havolasini yuborish"
+              )}
+            </Button>
+          </form>
 
           {/* Social Auth */}
-          {authMode !== "otp" && (
+          {authMode !== "forgot" && (
             <>
-              <div className="relative my-6">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                  <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white dark:bg-slate-900 px-3 text-slate-500">
-                    Yoki davom eting
-                  </span>
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <span className="bg-white dark:bg-slate-900 px-4">Yoki</span>
                 </div>
               </div>
 
@@ -351,7 +244,7 @@ export default function AuthPage() {
                 variant="outline"
                 onClick={handleGoogleAuth}
                 disabled={loading}
-                className="w-full py-6 border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex gap-3 shadow-sm"
+                className="w-full py-6 border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex gap-3 font-bold transition-all"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -371,7 +264,7 @@ export default function AuthPage() {
                     fill="#EA4335"
                   />
                 </svg>
-                Google orqali
+                Google bilan davom etish
               </Button>
             </>
           )}
@@ -379,35 +272,35 @@ export default function AuthPage() {
           {authMode === "forgot" && (
             <button
               onClick={() => setAuthMode("login")}
-              className="mt-4 flex items-center justify-center w-full gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+              className="mt-6 flex items-center justify-center w-full gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors"
             >
-              <ChevronLeft size={16} /> Orqaga qaytish
+              <ChevronLeft size={16} /> Login sahifasiga qaytish
             </button>
           )}
         </div>
 
-        {/* Footer */}
-        {authMode !== "forgot" && authMode !== "otp" && (
-          <p className="text-center text-sm text-slate-500">
+        {/* Bottom Toggle */}
+        {authMode !== "forgot" && (
+          <p className="text-center text-sm text-slate-500 font-medium">
             {authMode === "login"
-              ? "Hali a'zo emasmisiz?"
-              : "Hisobingiz bormi?"}{" "}
+              ? "Hali hisobingiz yo'qmi?"
+              : "Allaqachon a'zomisiz?"}{" "}
             <button
               onClick={() => {
                 setAuthMode(authMode === "login" ? "signup" : "login");
                 setError("");
                 setSuccess("");
               }}
-              className="text-primary font-bold hover:underline underline-offset-4"
+              className="text-primary font-black hover:underline underline-offset-4 ml-1"
             >
               {authMode === "login" ? "Ro'yxatdan o'ting" : "Tizimga kiring"}
             </button>
           </p>
         )}
 
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest">
-            Secure Cloud Authentication • Appwrite
+        <div className="text-center">
+          <p className="text-[10px] text-slate-400 uppercase tracking-[0.3em] font-medium">
+            Xavfsiz va Himoyalangan • Cloud Auth
           </p>
         </div>
       </div>
