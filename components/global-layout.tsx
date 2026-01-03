@@ -30,11 +30,7 @@ export function GlobalLayout({ children }: { children: React.ReactNode }) {
   }, [pathname, router, isAuthPage]);
 
   if (!isAuthPage && checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
-      </div>
-    );
+    return null
   }
 
   return (

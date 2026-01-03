@@ -22,6 +22,11 @@ import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Oddiy Skeleton komponenti (shadcn/ui bo'lmasa ham ishlaydi)
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse rounded-md bg-muted ${className}`} />
+);
+
 interface UserData {
   name: string;
   email: string;
@@ -103,20 +108,102 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading)
+  const handleDeleteAvatar = async () => {
+    if (!confirm("Avatarni o'chirishni tasdiqlaysizmi?")) return;
+    try {
+      const userData = await account.get();
+      const prefs = userData.prefs || {};
+      if (prefs.avatarId) {
+        await storage.deleteFile(AVATARS_BUCKET_ID, prefs.avatarId);
+        await account.updatePrefs({ avatarId: null });
+        await loadUser();
+        toast.success("Avatar o'chirildi");
+      }
+    } catch (error) {
+      toast.error("O'chirishda xatolik");
+    }
+  };
+
+  // LOADING SKELETON
+  if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="max-w-dvw mx-auto space-y-8 px-4 pb-20">
+        {/* Avatar va Header Skeleton */}
+        <div className="flex flex-col items-center sm:flex-row sm:items-end gap-6">
+          <div className="relative">
+            <Skeleton className="h-32 w-32 rounded-3xl" />
+            <Skeleton className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl" />
+          </div>
+
+          <div className="text-center sm:text-left space-y-4 flex-1">
+            <Skeleton className="h-10 w-64 mx-auto sm:mx-0" />
+            <Skeleton className="h-5 w-48 mx-auto sm:mx-0" />
+          </div>
+        </div>
+
+        {/* Kartalar Skeleton */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Hisob ma'lumotlari */}
+          <Card className="border-none">
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Xavfsizlik */}
+          <Card className="border-none">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center p-3 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <div>
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-3 w-32 mt-1" />
+                  </div>
+                </div>
+                <Skeleton className="h-5 w-5" />
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-xl opacity-60">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <Skeleton className="h-4 w-20 rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
+  }
+
   if (!user) return null;
 
   return (
-    <div className="max-w-dvw mx-auto space-y-6 ">
+    <div className="max-w-dvw mx-auto space-y-6 px-4 pb-20">
       {/* Header & Avatar Section */}
-      <div className="flex flex-col items-center sm:flex-row sm:items-end gap-5 px-2">
+      <div className="flex flex-col items-center sm:flex-row sm:items-end gap-5">
         <div className="relative group">
-          <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-linear-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-300">
+          <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-gradient-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-300">
             <div className="h-full w-full rounded-[20px] bg-card flex items-center justify-center overflow-hidden -rotate-3 group-hover:rotate-0 transition-transform duration-300">
               {user.avatar ? (
                 <img
@@ -131,7 +218,8 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-colors border-4 border-background"
+            disabled={uploading}
+            className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-colors border-4 border-background disabled:opacity-70"
           >
             {uploading ? (
               <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" />
@@ -182,7 +270,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             ) : (
-              <div className="flex justify-center items-center">
+              <div className="flex justify-center sm:justify-start items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight">
                   {user.name || "Foydalanuvchi"}
                 </h1>
@@ -220,7 +308,7 @@ export default function ProfilePage() {
                 {formatDate(user.$createdAt)}
               </span>
             </div>
-            <div className="flex items-center justify-between  p-0  lg:p-3 rounded-xl hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between p-0 lg:p-3 rounded-xl hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <Shield className="h-4 w-4 text-emerald-500" />
                 <span className="text-sm">Hisob ID</span>
@@ -241,7 +329,7 @@ export default function ProfilePage() {
           <CardContent className="space-y-3">
             <button
               onClick={() => router.push("/settings/password")}
-              className="w-full flex items-center justify-between  p-0 py-2 px-2 lg:p-3 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
+              className="w-full flex items-center justify-between p-0 py-2 px-2 lg:p-3 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500 rounded-lg text-white shadow-blue-500/20 shadow-lg">
@@ -257,7 +345,7 @@ export default function ProfilePage() {
               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <div className="flex items-center justify-between  p-0 py-2 px-2 lg:p-3 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+            <div className="flex items-center justify-between p-0 py-2 px-2 lg:p-3 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-400 rounded-lg text-white">
                   <Shield className="h-4 w-4" />
@@ -278,6 +366,7 @@ export default function ProfilePage() {
             variant="ghost"
             size="sm"
             className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleDeleteAvatar}
           >
             <Trash2 className="h-4 w-4 mr-2" /> Avatarni o'chirish
           </Button>

@@ -2,320 +2,262 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  Lock,
-  Bell,
-  Globe,
   Moon,
   Sun,
-  Monitor,
-  Check,
+  Bell,
+  Globe,
+  Shield,
+  LogOut,
   ChevronRight,
-  ShieldCheck,
-  Mail,
   Smartphone,
-  Loader2,
-  Save,
+  Mail,
+  Lock,
+  Trash2,
 } from "lucide-react";
-
 import { account } from "@/lib/appwrite";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
+
+// Skeleton komponenti
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse rounded-md bg-muted ${className}`} />
+);
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-  const [passwordData, setPasswordData] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
   const router = useRouter();
 
   useEffect(() => {
-    const init = async () => {
+    // Foydalanuvchi autentifikatsiyasini tekshirish
+    const checkAuth = async () => {
       try {
         await account.get();
-        const savedTheme = (localStorage.getItem("theme") as any) || "system";
-        setTheme(savedTheme);
-      } catch {
-        router.push("/auth");
-      } finally {
         setLoading(false);
+      } catch (error) {
+        router.push("/auth");
       }
     };
-    init();
+    checkAuth();
   }, [router]);
 
-  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    const isDark =
-      newTheme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        : newTheme === "dark";
-    document.documentElement.classList.toggle("dark", isDark);
-  };
-
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Yangi parollar mos kelmaydi");
-      return;
-    }
-    setIsUpdating(true);
+  const handleLogout = async () => {
+    if (!confirm("Hisobdan chiqishni tasdiqlaysizmi?")) return;
     try {
-      await account.updatePassword(
-        passwordData.newPassword,
-        passwordData.oldPassword
-      );
-      toast.success("Parol muvaffaqiyatli yangilandi");
-      setPasswordData({
-        oldPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (error: any) {
-      toast.error(error.message || "Xatolik yuz berdi");
-    } finally {
-      setIsUpdating(false);
+      await account.deleteSession("current");
+      toast.success("Muvaffaqiyatli chiqildi");
+      router.push("/auth");
+    } catch (error) {
+      toast.error("Chiqishda xatolik");
     }
   };
 
+  // LOADING SKELETON
   if (loading) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+      <div className="max-w-4xl mx-auto space-y-8 px-4 py-8 pb-20">
+        <div className="space-y-2 text-center sm:text-left">
+          <Skeleton className="h-10 w-64 mx-auto sm:mx-0" />
+          <Skeleton className="h-5 w-96 mx-auto sm:mx-0" />
+        </div>
+
+        <div className="grid gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="border-none shadow-sm">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[...Array(3)].map((_, j) => (
+                  <div
+                    key={j}
+                    className="flex items-center justify-between p-4 rounded-xl"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <div>
+                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-4 w-60 mt-2" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+
+          <div className="pt-6">
+            <Skeleton className="h-12 w-full max-w-md mx-auto rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  const cardStyle =
-    "bg-card/50 backdrop-blur-md border border-border/50 shadow-sm rounded-3xl overflow-hidden";
-
   return (
-    <div className="max-w-dvw mx-auto space-y-8 py-0 px-0 lg:px-4 sm:px-3">
-      {/* XAVFSIZLIK - PAROLNI O'ZGARTIRISH */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-3 px-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-          </div>
-          <h2 className="text-xl font-bold tracking-tight">
-            Xavfsizlik sozlamalari
-          </h2>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-8 px-4 py-8 pb-20">
+      {/* Sarlavha */}
+      <div className="text-center sm:text-left">
+        <h1 className="text-3xl font-bold tracking-tight">Sozlamalar</h1>
+        <p className="text-muted-foreground mt-2">
+          Hisobingiz va ilova sozlamalarini boshqaring
+        </p>
+      </div>
 
-        <div className={cardStyle}>
-          <div className="p-6 sm:p-8">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold">Parolni yangilash</h3>
-              <p className="text-sm text-muted-foreground">
-                Hisobingiz xavfsizligini ta'minlash uchun kuchli paroldan
-                foydalaning.
-              </p>
-            </div>
+      <div className="grid gap-6">
+        {/* Ko'rinish */}
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Ko'rinish</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-purple-500/10 rounded-lg text-purple-600">
+                  <Moon className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Qorong'i rejim</p>
+                  <p className="text-sm text-muted-foreground">
+                    Tizim sozlamasiga moslashadi
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
 
-            <form
-              onSubmit={handlePasswordUpdate}
-              className="grid gap-6 md:grid-cols-3"
+            <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-blue-500/10 rounded-lg text-blue-600">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Til</p>
+                  <p className="text-sm text-muted-foreground">O'zbekcha</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* Bildirishnomalar */}
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Bildirishnomalar</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-600">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Push bildirishnomalar</p>
+                  <p className="text-sm text-muted-foreground">
+                    Yangi tranzaksiyalar haqida xabar berish
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-orange-500/10 rounded-lg text-orange-600">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Email xabarnomalar</p>
+                  <p className="text-sm text-muted-foreground">
+                    Hisob faoliyati haqida haftalik hisobot
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* Xavfsizlik */}
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Xavfsizlik</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <button
+              onClick={() => router.push("/settings/password")}
+              className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group"
             >
-              <div className="space-y-2">
-                <Label className="text-sm font-medium ml-1">Joriy parol</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  className="bg-background/50 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 rounded-2xl"
-                  value={passwordData.oldPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      oldPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-blue-500 rounded-lg text-white shadow-lg shadow-blue-500/20">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">Parolni o'zgartirish</p>
+                  <p className="text-sm text-muted-foreground">
+                    Hisobingizni himoya qilish uchun yangi parol o'rnating
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium ml-1">Yangi parol</Label>
-                <Input
-                  type="password"
-                  placeholder="Kamida 8 belgi"
-                  className="bg-background/50 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 rounded-2xl"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium ml-1">Tasdiqlash</Label>
-                <Input
-                  type="password"
-                  placeholder="Qayta kiriting"
-                  className="bg-background/50 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-12 rounded-2xl"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData({
-                      ...passwordData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="md:col-span-3 flex justify-end">
-                <Button
-                  disabled={isUpdating}
-                  size="sm"
-                  className="h-11 px-6 rounded-2xl shadow-md transition-all active:scale-95"
-                >
-                  {isUpdating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Saqlash
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* TEMA SOZLAMALARI */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Monitor className="h-5 w-5 text-primary" />
+            <div className="w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-slate-400 rounded-lg text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">2-bosqichli autentifikatsiya</p>
+                  <p className="text-sm text-muted-foreground">
+                    Qo'shimcha himoya qatlami
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs bg-muted px-3 py-1 rounded-md uppercase font-bold">
+                Yaqinda
+              </span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight">Ko'rinish</h2>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className={`${cardStyle} p-2`}>
-            <div className="flex flex-col gap-1">
-              {[
-                {
-                  id: "light",
-                  label: "Yorug' tema",
-                  icon: Sun,
-                  color: "text-orange-500 bg-orange-500/10",
-                },
-                {
-                  id: "dark",
-                  label: "Qorong'u tema",
-                  icon: Moon,
-                  color: "text-blue-500 bg-blue-500/10",
-                },
-                {
-                  id: "system",
-                  label: "Tizimga mos",
-                  icon: Monitor,
-                  color: "text-emerald-500 bg-emerald-500/10",
-                },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleThemeChange(item.id as any)}
-                  className={`flex items-center justify-between p-4 rounded-2xl transition-all ${
-                    theme === item.id
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "hover:bg-primary/10 text-muted-foreground"
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`p-2 rounded-xl ${
-                        theme === item.id ? "bg-white/20" : item.color
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                    </div>
-                    <span className="font-semibold">{item.label}</span>
-                  </div>
-                  {theme === item.id && (
-                    <Check className="h-5 w-5 stroke-[3px]" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* BILDIRISHNOMALAR VA TIL */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Bell className="h-5 w-5 text-primary" />
-            </div>
-            <h2 className="text-xl font-bold tracking-tight">
-              Ilova sozlamalari
-            </h2>
-          </div>
-
-          <div className={cardStyle}>
-            <div className="divide-y divide-border/50">
-              {/* Email */}
-              <div className="flex items-center justify-between p-5 hover:bg-primary/5 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Email bildirishnomalar</p>
-                    <p className="text-xs text-muted-foreground">
-                      Xavfsizlik haqida xabarlar
-                    </p>
-                  </div>
+        {/* Hisob */}
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Hisob</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-muted/50 transition-colors group">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-destructive/10 rounded-lg text-destructive">
+                  <Trash2 className="h-5 w-5" />
                 </div>
-                <div className="h-6 w-11 rounded-full bg-primary/20 flex items-center px-1 cursor-pointer">
-                  <div className="h-4 w-4 rounded-full bg-primary translate-x-5 transition-transform shadow-sm" />
+                <div className="text-left">
+                  <p className="font-medium text-destructive">Hisobni o'chirish</p>
+                  <p className="text-sm text-muted-foreground">
+                    Barcha ma'lumotlar butunlay o'chiriladi
+                  </p>
                 </div>
               </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
+          </CardContent>
+        </Card>
+      </div>
 
-              {/* Til */}
-              <div className="flex items-center justify-between p-5 hover:bg-primary/5 transition-colors cursor-pointer group">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                    <Globe className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Interfeys tili</p>
-                    <p className="text-xs text-muted-foreground">
-                      O'zbekcha (Lotin)
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-
-              {/* SMS (Disabled) */}
-              <div className="flex items-center justify-between p-5 opacity-50 bg-secondary/20">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-xl bg-muted">
-                    <Smartphone className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">SMS xabarnomalar</p>
-                    <p className="text-xs">Tez kunda qo'shiladi</p>
-                  </div>
-                </div>
-                <div className="h-6 w-11 rounded-full bg-muted flex items-center px-1">
-                  <div className="h-4 w-4 rounded-full bg-background transition-transform shadow-sm" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      {/* Chiqish tugmasi */}
+      <div className="pt-6">
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="w-full max-w-md mx-auto h-12 text-lg font-medium rounded-xl border-destructive/50 text-destructive hover:bg-destructive/5"
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          Hisobdan chiqish
+        </Button>
       </div>
     </div>
   );

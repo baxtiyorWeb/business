@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 import {
   TrendingUp,
   TrendingDown,
@@ -17,7 +11,6 @@ import {
   Calendar,
   Building2,
   CreditCard,
-  Settings,
   Activity,
   BarChart3,
 } from "lucide-react";
@@ -29,7 +22,6 @@ import {
   TRANSACTIONS_COLLECTION_ID,
   Query,
 } from "@/lib/appwrite";
-import { useRouter } from "next/navigation";
 import { account } from "@/lib/appwrite";
 import {
   BarChart,
@@ -42,7 +34,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Stats {
   totalBusinesses: number;
@@ -216,25 +208,52 @@ export default function Dashboard() {
     }
   };
 
+  // Skeleton komponenti
+  const SkeletonCard = () => (
+    <div className="animate-pulse">
+      <div className="h-32 rounded-xl bg-muted/50" />
+    </div>
+  );
+
+  const SkeletonChart = () => (
+    <div className="animate-pulse">
+      <div className="h-52 rounded-xl bg-muted/50" />
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground">
-            Yuklanmoqda...
-          </p>
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full px-4 sm:px-6 lg:px-8">
+        {/* Stats Skeleton */}
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+
+        {/* Bottom Cards Skeleton */}
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Main Stats Cards - Professional va yengil ranglar */}
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden px-4 sm:px-6 lg:px-8">
+      {/* Main Stats Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Jami Balans
@@ -245,7 +264,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-2xl sm:text-sm lg:text-xl font-bold">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {formatCurrency(stats.totalRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 flex items-center">
@@ -267,7 +286,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Bizneslar
@@ -278,7 +297,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-          <div className="text-2xl sm:text-sm lg:text-xl font-bold">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {stats.totalBusinesses}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -288,7 +307,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-purple-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Mijozlar
@@ -299,7 +318,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-             <div className="text-2xl sm:text-sm lg:text-xl font-bold">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {stats.totalCustomers}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -309,7 +328,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-orange-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Bugun
@@ -320,7 +339,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-             <div className="text-2xl sm:text-sm lg:text-xl font-bold">
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {formatCurrency(stats.dailyRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -332,7 +351,6 @@ export default function Dashboard() {
 
       {/* Charts Section */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Haftalik Chart */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -377,7 +395,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Oylik Trend */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -429,7 +446,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Revenue Breakdown - Minimal va yengil */}
+      {/* Revenue Breakdown */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card className="hover:shadow-md transition-shadow border-l-4 border-l-emerald-500">
           <CardHeader className="pb-3">
@@ -488,7 +505,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

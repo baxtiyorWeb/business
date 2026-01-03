@@ -41,9 +41,16 @@ import {
 } from "@/lib/appwrite";
 import { toast } from "sonner";
 
-// Light/Dark rejimga mos dinamik input stillari
+// Skeleton komponenti (shadcn/ui bo'lmasa ham ishlaydi)
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse rounded-md bg-muted ${className}`} />
+);
+
 const inputBaseStyles =
   "focus-visible:ring-1 focus-visible:ring-primary border-border bg-background shadow-sm rounded-xl h-11 transition-all";
+
+const cardBaseStyle =
+  "bg-card border-border shadow-sm rounded-3xl overflow-hidden";
 
 export default function BusinessDetailPage() {
   const params = useParams();
@@ -144,7 +151,7 @@ export default function BusinessDetailPage() {
         date: formData.date,
         businessId,
         userId: user.$id,
-        ...(business.type === "education" && {
+        ...(business?.type === "education" && {
           courseName: formData.courseName,
           paymentMethod: formData.paymentMethod,
         }),
@@ -204,19 +211,121 @@ export default function BusinessDetailPage() {
     });
   };
 
-  if (loading)
+  // LOADING SKELETON
+  if (loading) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary/60" />
+      <div className="max-w-dvw mx-auto space-y-6 px-0 lg:px-4 pb-20">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+          <Skeleton className="hidden md:block h-11 w-56 rounded-xl" />
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className={cardBaseStyle}>
+              <CardContent className="p-5 space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </div>
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Transactions Title */}
+        <Skeleton className="h-6 w-48" />
+
+        {/* Desktop Table Skeleton */}
+        <div className={`hidden lg:block ${cardBaseStyle}`}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {[...Array(6)].map((_, i) => (
+                  <TableHead key={i}>
+                    <Skeleton className="h-5 w-24" />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...Array(7)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-8 w-20 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-28" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-5 w-32 ml-auto" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards Skeleton */}
+        <div className="lg:hidden space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="border-border rounded-2xl">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-3">
+                    <Skeleton className="h-10 w-10 rounded-xl" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-28" />
+                </div>
+                <div className="pt-3 border-t flex justify-between">
+                  <Skeleton className="h-4 w-36" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Mobile FAB Skeleton */}
+        <div className="md:hidden fixed bottom-24 right-6 z-50">
+          <Skeleton className="h-14 w-14 rounded-full" />
+        </div>
       </div>
     );
+  }
 
-  // Card uchun yagona dizayn (Light va Dark rejimga mos)
-  const cardBaseStyle =
-    "bg-card border-border shadow-sm rounded-3xl overflow-hidden";
-
+  // ASOSIY KONTENT
   return (
-    <div className="max-w-dvw mx-auto space-y-4  px-0 lg:px-4">
+    <div className="max-w-dvw mx-auto space-y-4 px-0 lg:px-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -248,7 +357,6 @@ export default function BusinessDetailPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
-        {/* Income Card */}
         <Card className={`${cardBaseStyle} border-l-4 border-l-blue-500`}>
           <CardContent className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
@@ -266,7 +374,6 @@ export default function BusinessDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Expense Card */}
         <Card className={`${cardBaseStyle} border-l-4 border-l-destructive`}>
           <CardContent className="p-5 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
@@ -286,7 +393,6 @@ export default function BusinessDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Balance Card */}
         <Card
           className={`${cardBaseStyle} border-l-4 col-span-2 lg:col-span-1 ${
             stats.balance >= 0 ? "border-l-emerald-500" : "border-l-orange-500"
@@ -350,107 +456,43 @@ export default function BusinessDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((t) => (
-                <TableRow
-                  key={t.$id}
-                  className="hover:bg-muted/30 border-border/50"
-                >
-                  <TableCell>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                        t.type === "income"
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {t.type === "income" ? "Daromad" : "Xarajat"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-semibold text-foreground">
-                    {t.courseName || t.description || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {t.customerName || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(t.date)}
-                  </TableCell>
+              {transactions.length === 0 ? (
+                <TableRow>
                   <TableCell
-                    className={`text-right font-bold ${
-                      t.type === "income"
-                        ? "text-emerald-600"
-                        : "text-destructive"
-                    }`}
+                    colSpan={6}
+                    className="text-center py-10 text-muted-foreground"
                   >
-                    {t.type === "income" ? "+" : "-"}
-                    {formatCurrency(t.amount)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditModal(t)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setTransactionToDelete(t.$id);
-                          setShowDeleteModal(true);
-                        }}
-                        className="h-8 w-8 text-destructive/70 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    Tranzaksiya hali yo'q
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Mobile List View */}
-        <div className="lg:hidden space-y-3">
-          {transactions.map((t) => (
-            <Card
-              key={t.$id}
-              className="bg-card border-border rounded-2xl shadow-none"
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex gap-3">
-                    <div
-                      className={`p-2 rounded-xl ${
-                        t.type === "income"
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {t.type === "income" ? (
-                        <TrendingUp className="h-5 w-5" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground text-sm">
-                        {t.courseName ||
-                          t.description ||
-                          (t.type === "income" ? "Daromad" : "Xarajat")}
-                      </h4>
-                      <p className="text-[10px] text-muted-foreground">
-                        {formatDate(t.date)} • {t.paymentMethod || "Naqd"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <h4
-                      className={`font-bold text-sm ${
+              ) : (
+                transactions.map((t) => (
+                  <TableRow
+                    key={t.$id}
+                    className="hover:bg-muted/30 border-border/50"
+                  >
+                    <TableCell>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                          t.type === "income"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {t.type === "income" ? "Daromad" : "Xarajat"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-semibold text-foreground">
+                      {t.courseName || t.description || "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {t.customerName || "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(t.date)}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-bold ${
                         t.type === "income"
                           ? "text-emerald-600"
                           : "text-destructive"
@@ -458,36 +500,117 @@ export default function BusinessDetailPage() {
                     >
                       {t.type === "income" ? "+" : "-"}
                       {formatCurrency(t.amount)}
-                    </h4>
-                  </div>
-                </div>
-                {t.customerName && (
-                  <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <User className="h-3 w-3" /> {t.customerName}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditModal(t)}
-                        className="text-muted-foreground p-1"
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditModal(t)}
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setTransactionToDelete(t.$id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="h-8 w-8 text-destructive/70 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile List View */}
+        <div className="lg:hidden space-y-3">
+          {transactions.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              Tranzaksiya hali yo'q
+            </div>
+          ) : (
+            transactions.map((t) => (
+              <Card
+                key={t.$id}
+                className="bg-card border-border rounded-2xl shadow-none"
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-3">
+                      <div
+                        className={`p-2 rounded-xl ${
+                          t.type === "income"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
                       >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setTransactionToDelete(t.$id);
-                          setShowDeleteModal(true);
-                        }}
-                        className="text-destructive p-1"
+                        {t.type === "income" ? (
+                          <TrendingUp className="h-5 w-5" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground text-sm">
+                          {t.courseName ||
+                            t.description ||
+                            (t.type === "income" ? "Daromad" : "Xarajat")}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDate(t.date)} • {t.paymentMethod || "Naqd"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <h4
+                        className={`font-bold text-sm ${
+                          t.type === "income"
+                            ? "text-emerald-600"
+                            : "text-destructive"
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        {t.type === "income" ? "+" : "-"}
+                        {formatCurrency(t.amount)}
+                      </h4>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {t.customerName && (
+                    <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <User className="h-3 w-3" /> {t.customerName}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(t)}
+                          className="text-muted-foreground p-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTransactionToDelete(t.$id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="text-destructive p-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </section>
 
@@ -499,6 +622,9 @@ export default function BusinessDetailPage() {
       >
         <Plus className="h-7 w-7" />
       </Button>
+
+      {/* Form Modal va Delete Modal o'zgarmasdan qoldi */}
+      {/* ... (oldingi kod bilan bir xil) */}
 
       {/* Form Modal */}
       {showFormModal && (
@@ -575,7 +701,7 @@ export default function BusinessDetailPage() {
                     />
                   </div>
                 </div>
-                {business.type === "education" && (
+                {business?.type === "education" && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-muted-foreground text-xs font-bold ml-1">
