@@ -61,7 +61,7 @@ interface Transaction {
 export default function BusinessDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
