@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"; // <-- Shadcn Table
+import {
   Store,
   Plus,
   Edit,
@@ -68,7 +76,6 @@ export default function BusinessesPage() {
     loadBusinesses();
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
     document.addEventListener("click", handleClickOutside);
@@ -239,49 +246,46 @@ export default function BusinessesPage() {
   }
 
   return (
-    <div className="space-y-4 px-5 sm:px-0 lg:px-0 lg:p-0 sm:space-y-6 w-full max-w-full ">
+    <div className="max-w-7xl mx-auto space-y-2 pb-0 px-4 sm:px-6 lg:px-0">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div></div>
-        <Button
-          size="lg"
-          onClick={() => openModal()}
-          className="w-full sm:w-auto"
-        >
+        <div>
+        
+        </div>
+        <Button size="lg" onClick={() => openModal()}>
           <Plus className="mr-2 h-5 w-5" />
           Yangi Biznes
         </Button>
       </div>
 
-      <div className="relative w-full">
-        <Search className="absolute  left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
-          placeholder="Qidirish..."
+          placeholder="Biznes nomi, turi yoki manzil bo'yicha qidirish..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 sm:pl-10 h-10 sm:h-12 w-1/4"
+          className="pl-10 h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
 
+      {/* Empty State */}
       {filteredBusinesses.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
-            <div className="p-4 sm:p-6 rounded-full bg-muted/50 mb-4 sm:mb-6">
-              <Store className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+        <Card className="border-dashed border-slate-300">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="p-6 rounded-full bg-muted/50 mb-6">
+              <Store className="h-16 w-16 text-muted-foreground" />
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold mb-2">
+            <h3 className="text-xl font-semibold mb-2">
               {searchQuery ? "Hech narsa topilmadi" : "Hozircha bizneslar yoʻq"}
             </h3>
-            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-sm">
+            <p className="text-muted-foreground max-w-sm mb-6">
               {searchQuery
                 ? "Boshqa kalit soʻz bilan qidirib koʻring"
-                : "Birinchi biznesingizni qoʻshing va daromadlarni kuzatishni boshlang"}
+                : "Birinchi biznesingizni qoʻshing va moliyaviy hisobotlarni boshlang"}
             </p>
             {!searchQuery && (
-              <Button
-                size="lg"
-                onClick={() => openModal()}
-                className="w-full sm:w-auto"
-              >
+              <Button size="lg" onClick={() => openModal()}>
                 <Plus className="mr-2 h-5 w-5" />
                 Birinchi Biznesni Qo'shish
               </Button>
@@ -290,189 +294,154 @@ export default function BusinessesPage() {
         </Card>
       ) : (
         <>
-          <div className="hidden md:block">
+          {/* Desktop: Shadcn Table */}
+          <div className="hidden lg:block">
             <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 font-semibold text-sm">
-                        Biznes
-                      </th>
-                      <th className="text-left p-4 font-semibold text-sm">
-                        Turi
-                      </th>
-                      <th className="text-left p-4 font-semibold text-sm">
-                        Aloqa
-                      </th>
-                      <th className="text-left p-4 font-semibold text-sm">
-                        Manzil
-                      </th>
-                      <th className="text-left p-4 font-semibold text-sm">
-                        Sana
-                      </th>
-                      <th className="text-right p-4 font-semibold text-sm">
-                        Amallar
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBusinesses.map((business) => {
-                      const {
-                        label,
-                        icon: Icon,
-                        color,
-                      } = getTypeConfig(business.type);
-
-                      return (
-                        <tr
-                          key={business.$id}
-                          onClick={() => handleRowClick(business.$id)}
-                          className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
-                        >
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`p-2 rounded-lg ${
-                                  color.split(" ")[0]
-                                } ${color.split(" ")[1]}`}
-                              >
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <div className="font-semibold">
-                                  {business.name}
-                                </div>
-                                {business.description && (
-                                  <div className="text-sm text-muted-foreground line-clamp-1 max-w-xs">
-                                    {business.description}
-                                  </div>
-                                )}
-                              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Biznes</TableHead>
+                    <TableHead>Turi</TableHead>
+                    <TableHead>Aloqa</TableHead>
+                    <TableHead>Manzil</TableHead>
+                    <TableHead>Yaratilgan</TableHead>
+                    <TableHead className="text-right">Amallar</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBusinesses.map((business) => {
+                    const {
+                      label,
+                      icon: Icon,
+                      color,
+                    } = getTypeConfig(business.type);
+                    return (
+                      <TableRow
+                        key={business.$id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleRowClick(business.$id)}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`p-3 rounded-xl ${
+                                color.split(" ")[0]
+                              } ${color.split(" ")[1]}`}
+                            >
+                              <Icon className="h-6 w-6" />
                             </div>
-                          </td>
-                          <td className="p-4">
-                            <Badge variant="secondary" className={color}>
-                              {label}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
-                            <div className="space-y-1 text-sm">
-                              {business.phone && (
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Phone className="h-3.5 w-3.5" />
-                                  <span>{business.phone}</span>
+                            <div>
+                              <div className="font-semibold">
+                                {business.name}
+                              </div>
+                              {business.description && (
+                                <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                                  {business.description}
                                 </div>
-                              )}
-                              {business.email && (
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Mail className="h-3.5 w-3.5" />
-                                  <span className="truncate max-w-[200px]">
-                                    {business.email}
-                                  </span>
-                                </div>
-                              )}
-                              {!business.phone && !business.email && (
-                                <span className="text-muted-foreground">—</span>
                               )}
                             </div>
-                          </td>
-                          <td className="p-4">
-                            {business.address ? (
-                              <div className="flex items-start gap-2 text-sm text-muted-foreground max-w-xs">
-                                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                <span className="line-clamp-2">
-                                  {business.address}
-                                </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={color}>
+                            {label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-sm">
+                            {business.phone && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Phone className="h-4 w-4" />
+                                {business.phone}
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
                             )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-3.5 w-3.5" />
-                              {formatDate(business?.$createdAt)}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openModal(business);
-                                }}
-                              >
-                                <Edit className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(business.$id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {business.email && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Mail className="h-4 w-4" />
+                                {business.email}
+                              </div>
+                            )}
+                            {!business.phone && !business.email && "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {business.address || "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(business?.$createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openModal(business);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(business.$id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </Card>
           </div>
 
-          <div className="md:hidden grid gap-4">
+          {/* Mobile: Cards */}
+          <div className="lg:hidden grid gap-4">
             {filteredBusinesses.map((business) => {
               const { label, icon: Icon, color } = getTypeConfig(business.type);
-
               return (
                 <Card
                   key={business.$id}
-                  className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                  className="hover:shadow-md transition-shadow"
                   onClick={() => handleRowClick(business.$id)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className={`p-2 rounded-lg ${color}`}>
-                          <Icon className="h-5 w-5" />
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className={`p-3 rounded-xl ${color}`}>
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base line-clamp-1">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">
                             {business.name}
                           </h3>
                           <Badge
                             variant="secondary"
-                            className={`mt-1.5 text-xs ${color}`}
+                            className={`mt-2 ${color}`}
                           >
                             {label}
                           </Badge>
                         </div>
                       </div>
-
                       <div className="relative">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
                           onClick={(e) => handleActionClick(e, business.$id)}
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreVertical className="h-5 w-5" />
                         </Button>
-
                         {activeDropdown === business.$id && (
-                          <div className="absolute right-0 mt-1 w-40 bg-background border rounded-lg shadow-lg z-10">
+                          <div className="absolute right-0 mt-2 w-48 bg-card border rounded-lg shadow-lg z-10">
                             <button
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                              className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-3"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openModal(business);
@@ -483,7 +452,7 @@ export default function BusinessesPage() {
                               Tahrirlash
                             </button>
                             <button
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-t"
+                              className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-3 border-t"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDelete(business.$id);
@@ -499,34 +468,32 @@ export default function BusinessesPage() {
                     </div>
 
                     {business.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                         {business.description}
                       </p>
                     )}
 
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-3 text-sm text-muted-foreground">
                       {business.address && (
-                        <div className="flex items-start gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">
-                            {business.address}
-                          </span>
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-5 w-5 mt-0.5" />
+                          <span>{business.address}</span>
                         </div>
                       )}
                       {business.phone && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="h-4 w-4 shrink-0" />
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-5 w-5" />
                           <span>{business.phone}</span>
                         </div>
                       )}
                       {business.email && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Mail className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{business.email}</span>
+                        <div className="flex items-center gap-3">
+                          <Mail className="h-5 w-5" />
+                          <span>{business.email}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-muted-foreground pt-2 border-t">
-                        <Calendar className="h-4 w-4 shrink-0" />
+                      <div className="flex items-center gap-3 pt-3 border-t">
+                        <Calendar className="h-5 w-5" />
                         <span>{formatDate(business?.$createdAt)}</span>
                       </div>
                     </div>
@@ -538,136 +505,125 @@ export default function BusinessesPage() {
         </>
       )}
 
+      {/* Modal – o'zgarmadi, faqat slate border saqlangan */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
-          <Card className="w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none">
-            <CardHeader className="border-b sticky top-0 bg-background z-10 shadow-sm">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-xl sm:text-2xl">
-                  {editingBusiness ? "Biznesni Tahrirlash" : "Yangi Biznes"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-background">
+            <CardHeader className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl">
+                  {editingBusiness
+                    ? "Biznesni Tahrirlash"
+                    : "Yangi Biznes Qo'shish"}
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowModal(false)}
-                  className="h-8 w-8 sm:h-10 sm:w-10"
                 >
-                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6 pb-4 sm:pb-6">
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                <div>
-                  <Label htmlFor="name" className="text-sm sm:text-base">
-                    Biznes Nomi *
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    required
-                    placeholder="Masalan: Super Market"
-                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
-                  />
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Biznes Nomi *</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      placeholder="Masalan: Super Market"
+                      required
+                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Biznes Turi *</Label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          type: e.target.value as any,
+                        })
+                      }
+                      required
+                      className="w-full h-11 px-4 rounded-lg border border-slate-300 bg-background text-foreground focus:border-slate-500 focus:outline-none transition-colors"
+                    >
+                      <option value="store">Do'kon</option>
+                      <option value="business">Umumiy Biznes</option>
+                      <option value="education">O'quv Markazi</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Manzil</Label>
+                    <Input
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
+                      placeholder="Toshkent, Chilanzar..."
+                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Telefon</Label>
+                    <Input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                      placeholder="+998 90 123 45 67"
+                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      placeholder="info@biznes.uz"
+                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Tavsif (ixtiyoriy)</Label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                      rows={4}
+                      placeholder="Bu biznes haqida qisqacha ma'lumot..."
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-background text-foreground placeholder:text-muted-foreground focus:border-slate-500 focus:outline-none resize-none transition-colors"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="type" className="text-sm sm:text-base">
-                    Biznes Turi *
-                  </Label>
-                  <select
-                    id="type"
-                    value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value as any })
-                    }
-                    className="mt-1.5 sm:mt-2 flex h-10 sm:h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    required
-                  >
-                    <option value="store">Do'kon</option>
-                    <option value="business">Umumiy Biznes</option>
-                    <option value="education">O'quv Markazi</option>
-                  </select>
-                </div>
-
-                <div>
-                  <Label htmlFor="address" className="text-sm sm:text-base">
-                    Manzil
-                  </Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    placeholder="Toshkent, Chilanzar..."
-                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="text-sm sm:text-base">
-                    Telefon
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    placeholder="+998 90 123 45 67"
-                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="text-sm sm:text-base">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="info@biznes.uz"
-                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description" className="text-sm sm:text-base">
-                    Tavsif
-                  </Label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        description: e.target.value,
-                      })
-                    }
-                    rows={3}
-                    className="mt-1.5 sm:mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
-                    placeholder="Qisqa ma'lumot..."
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
-                  <Button type="submit" size="lg" className="flex-1 h-11">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                  <Button type="submit" size="lg" className="flex-1 h-12">
                     {editingBusiness ? "Saqlash" : "Qo'shish"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="lg"
-                    className="h-11"
+                    className="h-12"
                     onClick={() => setShowModal(false)}
                   >
                     Bekor qilish

@@ -11,10 +11,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Bell, Globe, Moon, Sun, Monitor, Save, Mail, Phone } from "lucide-react";
+import {
+  Lock,
+  Bell,
+  Globe,
+  Moon,
+  Sun,
+  Monitor,
+  Save,
+  Mail,
+  Phone,
+} from "lucide-react";
 import { account } from "@/lib/appwrite";
 import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/toast"; // to'g'ri import (shadcn/ui toast)
+import { toast } from "@/components/ui/toast";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -108,25 +118,27 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-0">
+    <div className="max-w-dvw mx-auto space-y-1 py-0 px-4 sm:px-6 lg:px-0">
+
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Parolni o'zgartirish */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30">
                 <Lock className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
                 <CardTitle className="text-xl">Parolni o'zgartirish</CardTitle>
                 <CardDescription>
-                  Hisobingiz xavfsizligini ta'minlang
+                  Hisobingiz xavfsizligini kuchaytiring
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
+            <form onSubmit={handlePasswordChange} className="space-y-5">
+              <div className="space-y-2">
                 <Label htmlFor="oldPassword">Joriy parol</Label>
                 <Input
                   id="oldPassword"
@@ -138,12 +150,13 @@ export default function SettingsPage() {
                       oldPassword: e.target.value,
                     })
                   }
-                  required
                   placeholder="••••••••"
-                  className="mt-2"
+                  required
+                  className="h-11 border-slate-500 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
-              <div>
+
+              <div className="space-y-2">
                 <Label htmlFor="newPassword">Yangi parol</Label>
                 <Input
                   id="newPassword"
@@ -155,13 +168,14 @@ export default function SettingsPage() {
                       newPassword: e.target.value,
                     })
                   }
+                  placeholder="Kamida 8 belgi"
                   required
                   minLength={8}
-                  placeholder="Kamida 8 belgi"
-                  className="mt-2"
+                  className="h-11 border-slate-500 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
-              <div>
+
+              <div className="space-y-2">
                 <Label htmlFor="confirmPassword">
                   Yangi parolni tasdiqlash
                 </Label>
@@ -175,12 +189,13 @@ export default function SettingsPage() {
                       confirmPassword: e.target.value,
                     })
                   }
-                  required
                   placeholder="Yana bir marta kiriting"
-                  className="mt-2"
+                  required
+                  className="h-11 border-slate-500 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg">
+
+              <Button type="submit" size="lg" className="w-full h-12">
                 <Save className="mr-2 h-5 w-5" />
                 Parolni yangilash
               </Button>
@@ -188,31 +203,32 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Tema sozlamalari */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
                 <Monitor className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <CardTitle className="text-xl">Ilova temi</CardTitle>
                 <CardDescription>
-                  Ko'rinishni o'zingizga qulay qiling
+                  Ko'rinishni o'zingizga moslang
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <button
               onClick={() => handleThemeChange("light")}
               className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
                 theme === "light"
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                  : "border-border hover:border-blue-300 dark:hover:border-blue-700 hover:bg-muted/50"
+                  ? "border-primary bg-primary/5"
+                  : "border-slate-500 hover:border-slate-400 hover:bg-muted/50"
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                <div className="p-3 rounded-xl bg-yellow-100 dark:bg-yellow-900/30">
                   <Sun className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div className="text-left">
@@ -223,7 +239,9 @@ export default function SettingsPage() {
                 </div>
               </div>
               {theme === "light" && (
-                <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-full bg-white"></div>
+                </div>
               )}
             </button>
 
@@ -231,12 +249,12 @@ export default function SettingsPage() {
               onClick={() => handleThemeChange("dark")}
               className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
                 theme === "dark"
-                  ? "border-purple-500 bg-purple-50 dark:bg-purple-950/30"
-                  : "border-border border-slate-500 hover:border-purple-300 dark:hover:border-purple-700 hover:bg-muted/50"
+                  ? "border-primary bg-primary/5"
+                  : "border-slate-500 hover:border-slate-400 hover:bg-muted/50"
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
                   <Moon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div className="text-left">
@@ -247,7 +265,9 @@ export default function SettingsPage() {
                 </div>
               </div>
               {theme === "dark" && (
-                <div className="h-3 w-3 rounded-full bg-purple-600"></div>
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-full bg-white"></div>
+                </div>
               )}
             </button>
 
@@ -255,12 +275,12 @@ export default function SettingsPage() {
               onClick={() => handleThemeChange("system")}
               className={`w-full flex items-center justify-between p-5 rounded-xl border-2 transition-all ${
                 theme === "system"
-                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                  : "border-border border-slate-500 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-muted/50"
+                  ? "border-primary bg-primary/5"
+                  : "border-slate-500 hover:border-slate-400 hover:bg-muted/50"
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                   <Monitor className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="text-left">
@@ -271,16 +291,19 @@ export default function SettingsPage() {
                 </div>
               </div>
               {theme === "system" && (
-                <div className="h-3 w-3 rounded-full bg-emerald-600"></div>
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-full bg-white"></div>
+                </div>
               )}
             </button>
           </CardContent>
         </Card>
 
+        {/* Bildirishnomalar */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
                 <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
@@ -291,10 +314,10 @@ export default function SettingsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                   <Mail className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
@@ -311,13 +334,13 @@ export default function SettingsPage() {
                     email: !notifications.email,
                   })
                 }
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                  notifications.email ? "bg-emerald-600" : "bg-muted"
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                  notifications.email ? "bg-emerald-600" : "bg-slate-300"
                 }`}
               >
                 <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                    notifications.email ? "translate-x-6" : "translate-x-1"
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                    notifications.email ? "translate-x-7" : "translate-x-1"
                   }`}
                 />
               </button>
@@ -325,7 +348,7 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
                   <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -342,21 +365,21 @@ export default function SettingsPage() {
                     push: !notifications.push,
                   })
                 }
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                  notifications.push ? "bg-blue-600" : "bg-muted"
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                  notifications.push ? "bg-blue-600" : "bg-slate-300"
                 }`}
               >
                 <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                    notifications.push ? "translate-x-6" : "translate-x-1"
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                    notifications.push ? "translate-x-7" : "translate-x-1"
                   }`}
                 />
               </button>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between opacity-60">
               <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                <div className="p-3 rounded-xl bg-orange-100 dark:bg-orange-900/30">
                   <Phone className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
@@ -364,49 +387,47 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Tez orada</p>
                 </div>
               </div>
-              <button
-                disabled
-                className="relative inline-flex h-7 w-12 items-center rounded-full bg-muted opacity-50"
-              >
-                <span className="inline-block h-5 w-5 translate-x-1 rounded-full bg-white" />
-              </button>
+              <div className="relative inline-flex h-8 w-14 items-center rounded-full bg-slate-300">
+                <span className="inline-block h-6 w-6 translate-x-1 rounded-full bg-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Til sozlamalari */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
                 <Globe className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
                 <CardTitle className="text-xl">Ilova tili</CardTitle>
-                <CardDescription>
-                  Hozircha faqat o'zbek tili mavjud
-                </CardDescription>
+                <CardDescription>Interfeys tilini tanlang</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-5 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-5 rounded-xl border-2 border-primary bg-primary/5">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                  <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                     <Globe className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
                     <p className="font-semibold">O'zbekcha (Ўзбекча)</p>
-                    <p className="text-sm text-emerald-700 dark:text-emerald-400">
-                      Joriy til
-                    </p>
+                    <p className="text-sm text-primary">Joriy til</p>
                   </div>
                 </div>
-                <div className="h-3 w-3 rounded-full bg-emerald-600"></div>
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-full bg-white"></div>
+                </div>
               </div>
 
-              <div className="p-5 rounded-xl border border-dashed border-muted-foreground/30 text-center text-muted-foreground">
-                <p className="text-sm">Boshqa tillar tez orada qo'shiladi</p>
+              <div className="p-6 rounded-xl border border-dashed border-slate-500 dark:border-slate-700 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Boshqa tillar tez orada qo'shiladi
+                </p>
               </div>
             </div>
           </CardContent>
