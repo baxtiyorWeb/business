@@ -6,13 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -22,22 +15,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "@/components/ui/toast";
 import {
   ArrowLeft,
   Plus,
   DollarSign,
-  Calendar,
-  User,
   Edit,
   Trash2,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
-  BookOpen,
-  CreditCard,
   X,
+  User,
+  Loader2,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   databases,
@@ -46,60 +42,39 @@ import {
   TRANSACTIONS_COLLECTION_ID,
   ID,
   Query,
+  account,
 } from "@/lib/appwrite";
-import { account } from "@/lib/appwrite";
+import { toast } from "sonner";
 
-type BusinessType = "Restaurant" | "Shop" | "StudyCenter" | string;
-
-interface Business {
-  $id: string;
-  name: string;
-  type: BusinessType;
-  address?: string;
-  phone?: string;
-}
-
-interface Transaction {
-  $id: string;
-  businessId: string;
-  amount: string;
-  type: "income" | "expense";
-  description?: string;
-  customerName?: string;
-  date: string;
-  userId: string;
-  courseName?: string;
-  paymentMethod?: string;
-}
-
-const initialFormData = {
-  amount: "",
-  type: "income" as "income" | "expense",
-  description: "",
-  customerName: "",
-  date: new Date().toISOString().split("T")[0],
-  courseName: "",
-  paymentMethod: "Cash",
-};
+// Siz so'ragan umumiy input stillari: shadow/ring/outline yo'q, border slate-500
+const inputBaseStyles =
+  "focus-visible:ring-0 focus-visible:ring-offset-0 border-slate-500 focus:border-slate-500 shadow-none outline-none bg-transparent text-white";
 
 export default function BusinessDetailPage() {
   const params = useParams();
   const router = useRouter();
   const businessId = params?.id as string;
 
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [business, setBusiness] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [actionLoading, setActionLoading] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
     null
   );
-  const [editingTransaction, setEditingTransaction] =
-    useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
 
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState({
+    amount: "",
+    type: "income" as "income" | "expense",
+    description: "",
+    customerName: "",
+    date: new Date().toISOString().split("T")[0],
+    courseName: "",
+    paymentMethod: "Cash",
+  });
 
   const [stats, setStats] = useState({
     totalIncome: 0,
@@ -108,41 +83,46 @@ export default function BusinessDetailPage() {
   });
 
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      try {
+        await account.get();
+        await loadData();
+      } catch (error) {
+        router.push("/auth");
+      }
+    };
+    init();
   }, [businessId]);
 
   const loadData = async () => {
     try {
       const user = await account.get();
-      const userId = user.$id;
-
       const businessData = await databases.getDocument(
         DATABASE_ID,
         BUSINESSES_COLLECTION_ID,
         businessId
       );
-      setBusiness(businessData as unknown as Business);
+      setBusiness(businessData);
 
       const transactionsData = await databases.listDocuments(
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
         [
           Query.equal("businessId", businessId),
-          Query.equal("userId", userId),
+          Query.equal("userId", user.$id),
           Query.orderDesc("date"),
         ]
       );
 
-      const docs = transactionsData.documents as unknown as Transaction[];
+      const docs = transactionsData.documents;
       setTransactions(docs);
 
       const income = docs
-        .filter((t) => t.type === "income")
-        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-
+        .filter((t: any) => t.type === "income")
+        .reduce((sum, t: any) => sum + (parseFloat(t.amount) || 0), 0);
       const expense = docs
-        .filter((t) => t.type === "expense")
-        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+        .filter((t: any) => t.type === "expense")
+        .reduce((sum, t: any) => sum + (parseFloat(t.amount) || 0), 0);
 
       setStats({
         totalIncome: income,
@@ -150,8 +130,7 @@ export default function BusinessDetailPage() {
         balance: income - expense,
       });
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Ma'lumotlarni yuklashda xatolik");
+      toast.error("Ma'lumot yuklashda xatolik");
     } finally {
       setLoading(false);
     }
@@ -159,19 +138,18 @@ export default function BusinessDetailPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!business) return;
-
+    setActionLoading(true);
     try {
       const user = await account.get();
-      const userId = user.$id;
-
-      const payload: any = {
+      const payload = {
         amount: formData.amount,
         type: formData.type,
         description: formData.description,
         customerName: formData.customerName,
         date: formData.date,
-        ...(business.type === "StudyCenter" && {
+        businessId,
+        userId: user.$id,
+        ...(business.type === "education" && {
           courseName: formData.courseName,
           paymentMethod: formData.paymentMethod,
         }),
@@ -184,56 +162,35 @@ export default function BusinessDetailPage() {
           editingTransaction.$id,
           payload
         );
-        toast.success("Muvaffaqiyatli yangilandi");
+        toast.success("Yangilandi");
       } else {
         await databases.createDocument(
           DATABASE_ID,
           TRANSACTIONS_COLLECTION_ID,
           ID.unique(),
-          {
-            ...payload,
-            businessId,
-            userId,
-          }
+          payload
         );
-        toast.success("Yangi tranzaksiya qo'shildi");
+        toast.success("Qo'shildi");
       }
-
       closeFormModal();
       loadData();
     } catch (error) {
-      console.error("Error saving:", error);
-      toast.error("Saqlashda xatolik yuz berdi");
+      toast.error("Xatolik yuz berdi");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const confirmDelete = async () => {
-    if (!transactionToDelete) return;
-    try {
-      await databases.deleteDocument(
-        DATABASE_ID,
-        TRANSACTIONS_COLLECTION_ID,
-        transactionToDelete
-      );
-      toast.success("O'chirildi");
-      setShowDeleteModal(false);
-      setTransactionToDelete(null);
-      loadData();
-    } catch (error) {
-      toast.error("O'chirishda xatolik");
-    }
-  };
-
-  const openEditModal = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
+  const openEditModal = (t: any) => {
+    setEditingTransaction(t);
     setFormData({
-      amount: transaction.amount,
-      type: transaction.type,
-      description: transaction.description || "",
-      customerName: transaction.customerName || "",
-      date: transaction.date.split("T")[0],
-      courseName: transaction.courseName || "",
-      paymentMethod: transaction.paymentMethod || "Cash",
+      amount: t.amount,
+      type: t.type,
+      description: t.description || "",
+      customerName: t.customerName || "",
+      date: t.date.split("T")[0],
+      courseName: t.courseName || "",
+      paymentMethod: t.paymentMethod || "Cash",
     });
     setShowFormModal(true);
   };
@@ -241,453 +198,460 @@ export default function BusinessDetailPage() {
   const closeFormModal = () => {
     setShowFormModal(false);
     setEditingTransaction(null);
-    setFormData(initialFormData);
+    setFormData({
+      amount: "",
+      type: "income",
+      description: "",
+      customerName: "",
+      date: new Date().toISOString().split("T")[0],
+      courseName: "",
+      paymentMethod: "Cash",
+    });
   };
 
-  const renderStudyCenterFields = () => (
-    <>
-      <div className="space-y-2">
-        <Label>Kurs Nomi</Label>
-        <div className="relative">
-          <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Masalan: Full-Stack Bootcamp"
-            value={formData.courseName}
-            onChange={(e) =>
-              setFormData({ ...formData, courseName: e.target.value })
-            }
-            className="pl-9 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>To'lov Usuli</Label>
-        <Select
-          onValueChange={(value: "Cash" | "Card") =>
-            setFormData({ ...formData, paymentMethod: value })
-          }
-          value={formData.paymentMethod}
-        >
-          <SelectTrigger className="w-full border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
-            <CreditCard className="mr-2 h-4 w-4 text-muted-foreground" />
-            <SelectValue placeholder="Usulni tanlang" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Cash">Naqd pul (Cash)</SelectItem>
-            <SelectItem value="Card">Karta (Card/Transfer)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </>
-  );
-
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-white" />
       </div>
     );
-  }
-
-  if (!business) return null;
 
   return (
-    <div className="container mx-auto max-w-screen-xl space-y-6 px-4 pb-20 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-4 py-4">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+    <div className="max-w-7xl mx-auto p-4 space-y-6 pb-28 relative min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/businesses")}
+            className="text-white hover:bg-slate-800 shrink-0"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold truncate sm:text-2xl">
-            {business.name} ({business.type})
+          <h1 className="text-xl font-bold text-white truncate">
+            {business?.name}
           </h1>
         </div>
+
+        {/* Desktop Add Button */}
         <Button
           onClick={() => setShowFormModal(true)}
-          size="sm"
-          className="whitespace-nowrap"
+          className="hidden md:flex bg-white text-black hover:bg-slate-200"
         >
-          <Plus className="h-4 w-4 mr-1" /> Qo'shish
+          <Plus className="h-5 w-5 mr-1" /> Tranzaksiya qo'shish
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+      {/* MOBILE FLOATING ACTION BUTTON (FAB) */}
+      <button
+        onClick={() => setShowFormModal(true)}
+        className="md:hidden fixed bottom-24 right-6 z-50 bg-white text-black p-4 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-90 transition-transform"
+      >
+        <Plus className="h-8 w-8" />
+      </button>
+
+      {/* Stats Grid */}
+      {/* Stats Grid - Yangi dizayn */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
         {/* Daromad Card */}
-        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
-          <CardHeader className="p-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-xs font-medium">Daromad</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+        <Card className="border-l-4 border-l-blue-500 bg-[#0f172a]/40 hover:shadow-md transition-all border-y-0 border-r-0">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-xs sm:text-sm font-medium text-slate-400">
+                Daromad
+              </p>
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg font-bold text-blue-700 md:text-xl">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-lg sm:text-2xl font-bold text-white">
               {formatCurrency(stats.totalIncome)}
             </div>
+            <p className="text-[10px] sm:text-xs text-emerald-500 mt-1 flex items-center">
+              <Plus className="h-3 w-3 mr-0.5" /> Jami tushum
+            </p>
           </CardContent>
         </Card>
 
         {/* Xarajat Card */}
-        <Card className="bg-red-50 dark:bg-red-950/20 border-red-200">
-          <CardHeader className="p-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-xs font-medium">Xarajat</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+        <Card className="border-l-4 border-l-red-500 bg-[#0f172a]/40 hover:shadow-md transition-all border-y-0 border-r-0">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-xs sm:text-sm font-medium text-slate-400">
+                Xarajat
+              </p>
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg font-bold text-red-700 md:text-xl">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="text-lg sm:text-2xl font-bold text-white">
               {formatCurrency(stats.totalExpense)}
             </div>
+            <p className="text-[10px] sm:text-xs text-red-400 mt-1 flex items-center">
+              Chiqimlar miqdori
+            </p>
           </CardContent>
         </Card>
 
-        {/* Balans Card (Mobil ekranda to'liq kenglikda) */}
+        {/* Balans Card */}
         <Card
-          className={`col-span-2 lg:col-span-1 p-3 lg:p-4 ${
-            stats.balance >= 0
-              ? "bg-emerald-50 border-emerald-200"
-              : "bg-orange-50 border-orange-200"
-          } dark:bg-emerald-950/10`}
+          className={`border-l-4 ${
+            stats.balance >= 0 ? "border-l-emerald-500" : "border-l-orange-500"
+          } col-span-2 lg:col-span-1 bg-[#0f172a]/40 hover:shadow-md transition-all border-y-0 border-r-0`}
         >
-          <CardHeader className="p-0 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium">Balans</CardTitle>
-            <DollarSign className="h-4 w-4" />
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-xs sm:text-sm font-medium text-slate-400">
+                Sof Foyda / Balans
+              </p>
+              <div
+                className={`p-2 rounded-lg ${
+                  stats.balance >= 0 ? "bg-emerald-500/10" : "bg-orange-500/10"
+                }`}
+              >
+                <DollarSign
+                  className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                    stats.balance >= 0 ? "text-emerald-500" : "text-orange-500"
+                  }`}
+                />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-0 pt-1">
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div
-              className={`text-2xl font-bold ${
-                stats.balance >= 0 ? "text-emerald-700" : "text-red-600"
+              className={`text-xl sm:text-2xl font-bold ${
+                stats.balance >= 0 ? "text-emerald-500" : "text-orange-500"
               }`}
             >
               {formatCurrency(stats.balance)}
             </div>
+            <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
+              Joriy holat bo'yicha
+            </p>
           </CardContent>
         </Card>
       </div>
-      <div className="space-y-3">
-        <h3 className="font-semibold text-lg">So'nggi harakatlar</h3>
-        {transactions.length === 0 ? (
-          <div className="text-center py-10 border border-slate-300 dark:border-slate-700 rounded-xl bg-muted/20">
-            <p className="text-muted-foreground">Hozircha ma'lumot yo'q</p>
-          </div>
-        ) : (
-          <>
-            <div className="hidden lg:block">
-              <Card>
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[40px]">Turi</TableHead>
-                        <TableHead className="min-w-[150px]">
-                          Tavsif / Kurs
-                        </TableHead>
-                        <TableHead>Mijoz/Kontragent</TableHead>
-                        <TableHead>Sana</TableHead>
-                        <TableHead>To'lov Usuli</TableHead>
-                        <TableHead className="text-right min-w-[120px]">
-                          Summa
-                        </TableHead>
-                        <TableHead className="text-right w-[80px]">
-                          Amallar
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((t) => (
-                        <TableRow key={t.$id}>
-                          <TableCell>
-                            <div
-                              className={`p-2 rounded-full w-fit ${
-                                t.type === "income"
-                                  ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                  : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                              }`}
-                            >
-                              {t.type === "income" ? (
-                                <TrendingUp className="h-5 w-5" />
-                              ) : (
-                                <TrendingDown className="h-5 w-5" />
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {t.courseName ||
-                              t.description ||
-                              (t.type === "income" ? "Daromad" : "Xarajat")}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {t.customerName || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {formatDate(t.date)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {t.paymentMethod || "—"}
-                          </TableCell>
-                          <TableCell
-                            className={`text-right font-bold ${
-                              t.type === "income"
-                                ? "text-emerald-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {t.type === "income" ? "+" : "-"}
-                            {formatCurrency(parseFloat(t.amount))}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 text-blue-600 p-0"
-                                onClick={() => openEditModal(t)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 text-red-600 p-0"
-                                onClick={() => {
-                                  setTransactionToDelete(t.$id);
-                                  setShowDeleteModal(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+      {/* Content Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-white">Harakatlar tarixi</h3>
+
+        {/* Desktop Table */}
+        <div className="hidden lg:block bg-[#0f172a]/50 border border-slate-800 rounded-2xl overflow-hidden">
+          <Table>
+            <TableHeader className="bg-slate-900/50">
+              <TableRow className="border-slate-800">
+                <TableHead className="text-slate-400">Turi</TableHead>
+                <TableHead className="text-slate-400">Tavsif</TableHead>
+                <TableHead className="text-slate-400">Mijoz</TableHead>
+                <TableHead className="text-slate-400">Sana</TableHead>
+                <TableHead className="text-right text-slate-400">
+                  Summa
+                </TableHead>
+                <TableHead className="text-right text-slate-400">
+                  Amallar
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((t) => (
+                <TableRow
+                  key={t.$id}
+                  className="border-slate-800 hover:bg-slate-800/30"
+                >
+                  <TableCell>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        t.type === "income"
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : "bg-red-500/10 text-red-500"
+                      }`}
+                    >
+                      {t.type === "income" ? "Daromad" : "Xarajat"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-white font-medium">
+                    {t.courseName || t.description || "—"}
+                  </TableCell>
+                  <TableCell className="text-slate-400">
+                    {t.customerName || "—"}
+                  </TableCell>
+                  <TableCell className="text-slate-400">
+                    {formatDate(t.date)}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right font-bold ${
+                      t.type === "income" ? "text-emerald-500" : "text-red-500"
+                    }`}
+                  >
+                    {t.type === "income" ? "+" : "-"}
+                    {formatCurrency(t.amount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditModal(t)}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setTransactionToDelete(t.$id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-500 hover:text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="lg:hidden space-y-4">
+          {transactions.map((t) => (
+            <Card
+              key={t.$id}
+              className="bg-[#0f172a]/80 border-slate-800 shadow-none"
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex gap-3 min-w-0">
+                    <div
+                      className={`p-2 rounded-lg shrink-0 ${
+                        t.type === "income"
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : "bg-red-500/10 text-red-500"
+                      }`}
+                    >
+                      {t.type === "income" ? (
+                        <TrendingUp className="h-5 w-5" />
+                      ) : (
+                        <TrendingDown className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-white font-bold truncate">
+                        {t.courseName ||
+                          t.description ||
+                          (t.type === "income" ? "Daromad" : "Xarajat")}
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        {formatDate(t.date)} • {t.paymentMethod || "Naqd"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0">
+                    <h4
+                      className={`font-bold ${
+                        t.type === "income"
+                          ? "text-emerald-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {t.type === "income" ? "+" : "-"}
+                      {formatCurrency(t.amount)}
+                    </h4>
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditModal(t)}
+                        className="h-8 w-8 text-slate-400"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setTransactionToDelete(t.$id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="h-8 w-8 text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </Card>
+                {t.customerName && (
+                  <div className="mt-3 pt-3 border-t border-slate-800/50 flex items-center gap-2 text-xs text-slate-400">
+                    <User className="h-3 w-3" /> {t.customerName}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          {transactions.length === 0 && (
+            <div className="text-center py-10 text-slate-500">
+              Hozircha ma'lumot yo'q
             </div>
-
-            <div className="lg:hidden">
-              <div className="rounded-md border overflow-x-auto">
-                <Table className="min-w-full">
-                  <TableHeader>
-                    <TableRow className="text-xs">
-                      <TableHead className="w-[40px] p-2">Turi</TableHead>
-                      <TableHead className="p-2 min-w-[120px]">
-                        Tavsif / Kurs
-                      </TableHead>
-                      <TableHead className="hidden sm:table-cell p-2">
-                        Sana
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell p-2">
-                        Mijoz
-                      </TableHead>
-                      <TableHead className="hidden sm:table-cell p-2">
-                        To'lov
-                      </TableHead>
-                      <TableHead className="text-right p-2 min-w-[100px]">
-                        Summa
-                      </TableHead>
-                      <TableHead className="w-[60px] p-2">Amallar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((t) => (
-                      <TableRow key={t.$id} className="text-xs">
-                        <TableCell className="py-1 px-2">
-                          <div
-                            className={`p-1 rounded-full w-fit ${
-                              t.type === "income"
-                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                            }`}
-                          >
-                            {t.type === "income" ? (
-                              <TrendingUp className="h-4 w-4" />
-                            ) : (
-                              <TrendingDown className="h-4 w-4" />
-                            )}
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="py-1 px-2 font-medium">
-                          {t.courseName ||
-                            t.description ||
-                            (t.type === "income" ? "Daromad" : "Xarajat")}
-                        </TableCell>
-
-                        <TableCell className="hidden sm:table-cell py-1 px-2 text-muted-foreground">
-                          {formatDate(t.date)}
-                        </TableCell>
-
-                        <TableCell className="hidden md:table-cell py-1 px-2">
-                          {t.customerName || "-"}
-                        </TableCell>
-
-                        <TableCell className="hidden sm:table-cell py-1 px-2">
-                          {t.paymentMethod || "-"}
-                        </TableCell>
-
-                        <TableCell
-                          className={`text-right py-1 px-2 font-bold ${
-                            t.type === "income"
-                              ? "text-emerald-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {t.type === "income" ? "+" : "-"}
-                          {formatCurrency(parseFloat(t.amount))}
-                        </TableCell>
-
-                        <TableCell className="py-1 px-2">
-                          <div className="flex gap-1 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-blue-600 p-0"
-                              onClick={() => openEditModal(t)}
-                            >
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-600 p-0"
-                              onClick={() => {
-                                setTransactionToDelete(t.$id);
-                                setShowDeleteModal(true);
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
+      {/* Form Modal */}
       {showFormModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm dark:bg-black/80">
-          <Card className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-              <CardTitle>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-lg bg-slate-900 border-slate-800 text-white max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+              <CardTitle className="text-lg">
                 {editingTransaction ? "Tahrirlash" : "Yangi tranzaksiya"}
-                <span className="text-sm font-normal text-muted-foreground block">
-                  {business?.type === "StudyCenter"
-                    ? "O'quv Markazi"
-                    : "Umumiy"}
-                </span>
               </CardTitle>
-              <Button variant="ghost" size="icon" onClick={closeFormModal}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeFormModal}
+                className="text-slate-400"
+              >
                 <X className="h-5 w-5" />
               </Button>
             </CardHeader>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg mx-6 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, type: "income" })}
-                  className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    formData.type === "income"
-                      ? "bg-background shadow-sm text-emerald-600"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  Daromad
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, type: "expense" })}
-                  className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    formData.type === "expense"
-                      ? "bg-background shadow-sm text-red-600"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  Xarajat
-                </button>
-              </div>
-              <CardContent className="space-y-4 pt-6 grid grid-cols-1 lg:grid-cols-2 lg:gap-4">
-                <div className="space-y-2">
-                  <Label>Summa</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <CardContent className="p-6 space-y-4">
+                {/* Type Switcher */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-800 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "income" })}
+                    className={`py-2 text-sm font-medium rounded-lg transition-all ${
+                      formData.type === "income"
+                        ? "bg-emerald-500 text-white shadow-lg"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    Daromad
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, type: "expense" })
+                    }
+                    className={`py-2 text-sm font-medium rounded-lg transition-all ${
+                      formData.type === "expense"
+                        ? "bg-red-500 text-white shadow-lg"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    Xarajat
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-400">Summa *</Label>
                     <Input
+                      required
                       type="number"
-                      placeholder="0.00"
+                      className={inputBaseStyles}
                       value={formData.amount}
                       onChange={(e) =>
                         setFormData({ ...formData, amount: e.target.value })
                       }
-                      className="pl-9 text-lg border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-400">Sana *</Label>
+                    <Input
                       required
+                      type="date"
+                      className={inputBaseStyles}
+                      value={formData.date}
+                      onChange={(e) =>
+                        setFormData({ ...formData, date: e.target.value })
+                      }
                     />
                   </div>
                 </div>
 
-                {business.type === "StudyCenter" && renderStudyCenterFields()}
-
-                {business.type !== "StudyCenter" && (
-                  <div className="space-y-2">
-                    <Label>Tavsif</Label>
-                    <Textarea
-                      placeholder="Masalan: Mahsulot sotuvi yoki Ijara to'lovi"
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      className="border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
+                {business.type === "education" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-slate-400">Kurs nomi</Label>
+                      <Input
+                        className={inputBaseStyles}
+                        value={formData.courseName}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            courseName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-400">To'lov usuli</Label>
+                      <select
+                        className={`w-full h-10 px-3 rounded-md border ${inputBaseStyles} bg-slate-900`}
+                        value={formData.paymentMethod}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paymentMethod: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Cash">Naqd pul</option>
+                        <option value="Card">Karta / O'tkazma</option>
+                      </select>
+                    </div>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label>Mijoz/Kontragent (ixtiyoriy)</Label>
+                  <Label className="text-slate-400">Mijoz / Kontragent</Label>
                   <Input
-                    placeholder="Ism sharifi yoki tashkilot nomi"
+                    className={inputBaseStyles}
                     value={formData.customerName}
                     onChange={(e) =>
                       setFormData({ ...formData, customerName: e.target.value })
                     }
-                    className="border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Sana</Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
+                  <Label className="text-slate-400">Tavsif</Label>
+                  <Textarea
+                    className={inputBaseStyles}
+                    value={formData.description}
                     onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
+                      setFormData({ ...formData, description: e.target.value })
                     }
-                    className="border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
                   />
                 </div>
               </CardContent>
-              <div className="p-6 border-t flex gap-3">
+              <div className="p-6 border-t border-slate-800 flex gap-3 sticky bottom-0 bg-slate-900">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="flex-1"
+                  variant="ghost"
+                  className="flex-1 text-slate-400"
                   onClick={closeFormModal}
                 >
                   Bekor qilish
                 </Button>
-                <Button type="submit" className="flex-1">
-                  {editingTransaction ? "Saqlash" : "Qo'shish"}
+                <Button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="flex-1 bg-white text-black hover:bg-slate-200"
+                >
+                  {actionLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Saqlash
                 </Button>
               </div>
             </form>
@@ -695,22 +659,23 @@ export default function BusinessDetailPage() {
         </div>
       )}
 
+      {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
-          <Card className="w-full max-w-[320px]">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <Card className="w-full max-w-sm bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="font-bold text-lg">O'chirishni tasdiqlaysizmi?</h3>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-slate-400 mt-2">
                 Bu amalni ortga qaytarib bo'lmaydi.
               </p>
             </CardContent>
             <div className="p-4 flex gap-2">
               <Button
-                variant="outline"
-                className="flex-1"
+                variant="ghost"
+                className="flex-1 text-slate-400"
                 onClick={() => setShowDeleteModal(false)}
               >
                 Yo'q
@@ -718,9 +683,22 @@ export default function BusinessDetailPage() {
               <Button
                 variant="destructive"
                 className="flex-1"
-                onClick={confirmDelete}
+                onClick={async () => {
+                  try {
+                    await databases.deleteDocument(
+                      DATABASE_ID,
+                      TRANSACTIONS_COLLECTION_ID,
+                      transactionToDelete!
+                    );
+                    toast.success("O'chirildi");
+                    setShowDeleteModal(false);
+                    loadData();
+                  } catch (e) {
+                    toast.error("Xatolik");
+                  }
+                }}
               >
-                Ha, o'chirilsin
+                O'chirish
               </Button>
             </div>
           </Card>

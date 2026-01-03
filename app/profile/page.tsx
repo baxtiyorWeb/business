@@ -1,33 +1,26 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   User,
   Mail,
   Calendar,
   Shield,
-  Edit,
-  Save,
+  Edit2,
+  Check,
   X,
-  Upload,
   Camera,
   Trash2,
+  ChevronRight,
+  Lock,
 } from "lucide-react";
-import { account, storage } from "@/lib/appwrite";
+import { account, storage, ID, AVATARS_BUCKET_ID } from "@/lib/appwrite";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { ID, AVATARS_BUCKET_ID } from "@/lib/appwrite";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 interface UserData {
   name: string;
@@ -57,385 +50,239 @@ export default function ProfilePage() {
       try {
         const prefs = userData.prefs || {};
         if (prefs.avatarId) {
-          const avatarFile = storage.getFileView(
-            AVATARS_BUCKET_ID,
-            prefs.avatarId
-          );
-          avatarUrl = avatarFile.toString();
+          avatarUrl = storage
+            .getFileView(AVATARS_BUCKET_ID, prefs.avatarId)
+            .toString();
         }
       } catch (e) {
-        console.log("Avatar not found or error:", e);
+        console.log(e);
       }
 
-      setUser({
-        ...(userData as any),
-        avatar: avatarUrl,
-      });
+      setUser({ ...(userData as any), avatar: avatarUrl });
       setFormData({ name: userData.name || "" });
     } catch (error) {
-      console.error("Error loading user:", error);
       router.push("/auth");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveName = async () => {
+    if (!formData.name.trim()) return;
     try {
       await account.updateName(formData.name);
       await loadUser();
       setEditing(false);
-      toast.success("Ismingiz yangilandi.");
+      toast.success("Ism yangilandi");
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Ismni yangilashda xatolik yuz berdi.");
+      toast.error("Xatolik yuz berdi");
     }
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Faqat rasm fayllari qabul qilinadi");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Rasm hajmi 5MB dan kichik bo'lishi kerak");
-      return;
-    }
-
     try {
       setUploading(true);
-
       const userData = await account.get();
       const prefs = userData.prefs || {};
-
       if (prefs.avatarId) {
         try {
           await storage.deleteFile(AVATARS_BUCKET_ID, prefs.avatarId);
-        } catch (e) {
-          console.warn("Oldingi avatarni o'chirishda xatolik:", e);
-        }
+        } catch (e) {}
       }
-
       const fileId = ID.unique();
       await storage.createFile(AVATARS_BUCKET_ID, fileId, file);
-
-      await account.updatePrefs({
-        ...prefs,
-        avatarId: fileId,
-      });
-
+      await account.updatePrefs({ ...prefs, avatarId: fileId });
       await loadUser();
-      toast.success("Avatar muvaffaqiyatli yuklandi.");
-    } catch (error: any) {
-      console.error("Error uploading avatar:", error);
-      toast.error(error.message || "Avatar yuklashda xatolik yuz berdi.");
+      toast.success("Avatar yangilandi");
+    } catch (error) {
+      toast.error("Yuklashda xatolik");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const handleRemoveAvatar = async () => {
-    if (!confirm("Avatarni oʻchirishni xohlaysizmi?")) return;
-
-    try {
-      const userData = await account.get();
-      const prefs = userData.prefs || {};
-      if (prefs.avatarId) {
-        await storage.deleteFile(AVATARS_BUCKET_ID, prefs.avatarId);
-        await account.updatePrefs({ ...prefs, avatarId: null });
-        await loadUser();
-        toast.success("Avatar oʻchirildi.");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Avatar oʻchirishda xatolik yuz berdi.");
-    }
-  };
-
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-3 text-sm sm:text-base text-muted-foreground">
-            Yuklanmoqda...
-          </p>
-        </div>
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
-  }
-
   if (!user) return null;
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden lg:p-0">
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-4 sm:pb-6">
-            <CardTitle className="text-lg sm:text-xl">
-              Shaxsiy Ma'lumotlar
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Profilingizning asosiy ma'lumotlari
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 px-0 sm:px-0 pb-4 sm:pb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-              <div className="relative group">
-                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
-                  <div className="h-full w-full rounded-full bg-background flex items-center justify-center overflow-hidden">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.name || "Avatar"}
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      <User className="h-12 w-12 sm:h-14 sm:w-14 text-blue-600 dark:text-blue-400" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hidden sm:flex">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="p-2.5 bg-white/90 hover:bg-white rounded-full transition-colors"
-                      title="Yuklash"
-                    >
-                      <Camera className="h-4 w-4 text-slate-900" />
-                    </button>
-                    {user.avatar && (
-                      <button
-                        onClick={handleRemoveAvatar}
-                        disabled={uploading}
-                        className="p-2.5 bg-white/90 hover:bg-white rounded-full transition-colors"
-                        title="O'chirish"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
+    <div className="max-w-4xl mx-auto space-y-6 pb-24">
+      {/* Header & Avatar Section */}
+      <div className="flex flex-col items-center sm:flex-row sm:items-end gap-5 px-2">
+        <div className="relative group">
+          <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-gradient-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-300">
+            <div className="h-full w-full rounded-[20px] bg-card flex items-center justify-center overflow-hidden -rotate-3 group-hover:rotate-0 transition-transform duration-300">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
                 />
-              </div>
-
-              <div className="text-center sm:text-left flex-1 min-w-0">
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground truncate">
-                  {user.name || "Foydalanuvchi"}
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
-                  <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 shrink-0" />
-                  <span className="truncate max-w-full">{user.email}</span>
-                </p>
-                {uploading && (
-                  <p className="text-xs sm:text-sm text-primary mt-2 flex items-center gap-2 justify-center sm:justify-start">
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-primary border-t-transparent"></div>
-                    Yuklanmoqda...
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-2 sm:hidden">
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex-1"
-                size="sm"
-              >
-                <Upload className="mr-2 h-3.5 w-3.5" />
-                {uploading ? "Yuklanmoqda..." : "Yuklash"}
-              </Button>
-              {user.avatar && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleRemoveAvatar}
-                  disabled={uploading}
-                  className="px-3"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+              ) : (
+                <User className="h-12 w-12 text-muted-foreground" />
               )}
             </div>
-
-            {!editing ? (
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 shrink-0">
-                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Ism
-                    </p>
-                    <p className="font-semibold text-sm sm:text-base truncate">
-                      {user.name || "Kiritilmagan"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 shrink-0">
-                    <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Email
-                    </p>
-                    <p className="font-semibold text-sm sm:text-base truncate">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30 shrink-0">
-                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Ro'yxatdan o'tgan
-                    </p>
-                    <p className="font-semibold text-xs sm:text-base">
-                      {formatDate(user.$createdAt)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30 shrink-0">
-                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                      Hisob ID
-                    </p>
-                    <p className="font-mono font-semibold text-xs sm:text-sm truncate">
-                      {user.$id}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => setEditing(true)}
-                  className="w-full h-10 sm:h-11"
-                  size="default"
-                >
-                  <Edit className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Tahrirlash
-                </Button>
-              </div>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-colors border-4 border-background"
+          >
+            {uploading ? (
+              <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" />
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name" className="text-sm sm:text-base">
-                    Ism
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="Ismingizni kiriting"
-                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
-                  />
-                </div>
-                <div className="flex gap-2 sm:gap-3">
+              <Camera className="h-4 w-4" />
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+        </div>
+
+        <div className="text-center sm:text-left space-y-1 flex-1 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start gap-3">
+            {editing ? (
+              <div className="flex flex-col gap-3 w-full max-w-md mx-auto sm:mx-0">
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ name: e.target.value })}
+                  placeholder="Yangi ism kiriting"
+                  className="h-12 text-xl font-bold border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
                   <Button
-                    onClick={handleSave}
-                    className="flex-1 h-10 sm:h-11"
-                    size="default"
+                    size="icon"
+                    variant="ghost"
+                    className="h-10 w-10 text-emerald-600 hover:bg-emerald-50"
+                    onClick={handleSaveName}
                   >
-                    <Save className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Saqlash
+                    <Check className="h-5 w-5" />
                   </Button>
                   <Button
-                    variant="outline"
+                    size="icon"
+                    variant="ghost"
+                    className="h-10 w-10 text-red-600 hover:bg-red-50"
                     onClick={() => {
                       setEditing(false);
                       setFormData({ name: user.name || "" });
                     }}
-                    className="flex-1 h-10 sm:h-11"
-                    size="default"
                   >
-                    <X className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Bekor
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
+            ) : (
+              <div className="flex justify-center items-center">
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {user.name || "Foydalanuvchi"}
+                </h1>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-10 w-10 text-muted-foreground hover:bg-muted"
+                  onClick={() => setEditing(true)}
+                >
+                  <Edit2 className="h-5 w-5" />
+                </Button>
+              </div>
             )}
+          </div>
+          <p className="text-muted-foreground text-sm flex items-center justify-center sm:justify-start gap-1.5">
+            <Mail className="h-3.5 w-3.5" /> {user.email}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Hisob ma'lumotlari
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center justify-between p-0 lg:p-3 rounded-xl hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                <span className="text-sm">A'zolik sanasi</span>
+              </div>
+              <span className="text-sm font-medium">
+                {formatDate(user.$createdAt)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between  p-0  lg:p-3 rounded-xl hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Shield className="h-4 w-4 text-emerald-500" />
+                <span className="text-sm">Hisob ID</span>
+              </div>
+              <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                {user.$id.slice(0, 8)}...
+              </span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-4 sm:pb-6">
-            <CardTitle className="text-lg sm:text-xl">
-              Hisob Xavfsizligi
+        <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Xavfsizlik
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Parol va xavfsizlik sozlamalari
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="p-4 sm:p-6 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30 rounded-xl border border-red-200 dark:border-red-900/50">
-              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <div className="p-2 sm:p-3 rounded-full bg-red-100 dark:bg-red-900/50 shrink-0">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
+          <CardContent className="space-y-3">
+            <button
+              onClick={() => router.push("/settings/password")}
+              className="w-full flex items-center justify-between  p-0 py-2 px-2 lg:p-3 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500 rounded-lg text-white shadow-blue-500/20 shadow-lg">
+                  <Lock className="h-4 w-4" />
                 </div>
-                <h4 className="text-base sm:text-lg font-semibold">
-                  Parolni o'zgartirish
-                </h4>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Parolni o'zgartirish</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Oxirgi marta 3 oy oldin
+                  </p>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                Parolingizni xavfsiz saqlang va muntazam yangilang
-              </p>
-              <Button
-                variant="default"
-                onClick={() => router.push("/settings/password")}
-                className="w-full h-10 sm:h-11"
-                size="default"
-              >
-                Parolni o'zgartirish
-              </Button>
-            </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </button>
 
-            <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50">
-              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                <div className="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900/50 shrink-0">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center justify-between  p-0 py-2 px-2 lg:p-3 rounded-xl bg-muted/30 opacity-60 cursor-not-allowed">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-400 rounded-lg text-white">
+                  <Shield className="h-4 w-4" />
                 </div>
-                <h4 className="text-base sm:text-lg font-semibold">2FA</h4>
+                <span className="text-sm font-medium">2-bosqichli himoya</span>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                Hisobingizni qo'shimcha himoya bilan ta'minlang
-              </p>
-              <Button
-                variant="outline"
-                disabled
-                className="w-full h-10 sm:h-11"
-                size="default"
-              >
-                Tez orada
-              </Button>
+              <span className="text-[10px] bg-muted px-2 py-1 rounded-md uppercase font-bold">
+                Yaqinda
+              </span>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {user.avatar && (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Avatarni o'chirish
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

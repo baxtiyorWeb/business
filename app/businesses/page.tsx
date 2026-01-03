@@ -1,7 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import {
+  Store,
+  Plus,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
+  Search,
+  Building2,
+  Briefcase,
+  GraduationCap,
+  MoreVertical,
+  Loader2,
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,23 +29,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"; // <-- Shadcn Table
+} from "@/components/ui/table";
 import {
-  Store,
-  Plus,
-  Edit,
-  Trash2,
-  MapPin,
-  Phone,
-  Mail,
-  Search,
-  X,
-  Building2,
-  Briefcase,
-  GraduationCap,
-  MoreVertical,
-  Calendar,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { formatDate } from "@/lib/utils";
 import {
   databases,
@@ -37,10 +51,9 @@ import {
   BUSINESSES_COLLECTION_ID,
   ID,
   Query,
+  account,
 } from "@/lib/appwrite";
-import { account } from "@/lib/appwrite";
-import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/toast";
+import { toast } from "sonner";
 
 interface Business {
   $id: string;
@@ -48,66 +61,62 @@ interface Business {
   type: "store" | "business" | "education";
   address?: string;
   phone?: string;
-  email?: string;
   description?: string;
   userId: string;
-  $createdAt?: string;
+  $createdAt: string;
 }
+
+// Borderlar uchun dinamik ranglar
+const inputBaseStyles =
+  "focus-visible:ring-0 focus-visible:ring-offset-0 border-slate-300 dark:border-slate-700 focus:border-primary shadow-none outline-none bg-background";
 
 export default function BusinessesPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     name: "",
     type: "store" as "store" | "business" | "education",
     address: "",
     phone: "",
-    email: "",
     description: "",
   });
+
   const router = useRouter();
 
   useEffect(() => {
-    checkAuth();
-    loadBusinesses();
+    const init = async () => {
+      try {
+        await account.get();
+        await loadBusinesses();
+      } catch (error) {
+        router.push("/auth");
+      }
+    };
+    init();
   }, []);
-
-  useEffect(() => {
-    const handleClickOutside = () => setActiveDropdown(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      await account.get();
-    } catch (error) {
-      router.push("/auth");
-    }
-  };
 
   const loadBusinesses = async () => {
     try {
-      const userId = (await account.get()).$id;
+      const user = await account.get();
       const response = await databases.listDocuments(
         DATABASE_ID,
         BUSINESSES_COLLECTION_ID,
-        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
+        [Query.equal("userId", user.$id), Query.orderDesc("$createdAt")]
       );
       setBusinesses(response.documents as any);
     } catch (error) {
-      console.error("Error loading businesses:", error);
-      toast.error("Bizneslarni yuklashda muammo yuz berdi.");
+      toast.error("Xatolik yuz berdi.");
     } finally {
       setLoading(false);
     }
   };
 
-  const openModal = (business?: Business) => {
+  const handleOpenModal = (business?: Business) => {
     if (business) {
       setEditingBusiness(business);
       setFormData({
@@ -115,7 +124,6 @@ export default function BusinessesPage() {
         type: business.type,
         address: business.address || "",
         phone: business.phone || "",
-        email: business.email || "",
         description: business.description || "",
       });
     } else {
@@ -125,514 +133,350 @@ export default function BusinessesPage() {
         type: "store",
         address: "",
         phone: "",
-        email: "",
         description: "",
       });
     }
-    setShowModal(true);
+    setOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setActionLoading(true);
     try {
-      const userId = (await account.get()).$id;
-
+      const user = await account.get();
       if (editingBusiness) {
         await databases.updateDocument(
           DATABASE_ID,
           BUSINESSES_COLLECTION_ID,
           editingBusiness.$id,
-          {
-            name: formData.name,
-            type: formData.type,
-            address: formData.address,
-            phone: formData.phone,
-            email: formData.email,
-            description: formData.description,
-          }
+          { ...formData }
         );
-        toast.success("Biznes muvaffaqiyatli yangilandi.");
+        toast.success("Yangilandi");
       } else {
         await databases.createDocument(
           DATABASE_ID,
           BUSINESSES_COLLECTION_ID,
           ID.unique(),
-          { ...formData, userId }
+          { ...formData, userId: user.$id }
         );
-        toast.success("Yangi biznes qo'shildi.");
+        toast.success("Qo'shildi");
       }
-
-      setShowModal(false);
-      setEditingBusiness(null);
+      setOpen(false);
       loadBusinesses();
     } catch (error) {
-      console.error("Error saving business:", error);
-      toast.error("Saqlashda xatolik yuz berdi.");
+      toast.error("Xatolik");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Bu biznesni butunlay oʻchirishni xohlaysizmi?"))
-      return;
-
+    if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
     try {
       await databases.deleteDocument(DATABASE_ID, BUSINESSES_COLLECTION_ID, id);
-      toast.success("Biznes muvaffaqiyatli o'chirildi.");
+      toast.success("O'chirildi");
       loadBusinesses();
     } catch (error) {
-      toast.error("O'chirishda muammo yuz berdi.");
+      toast.error("Xatolik");
     }
   };
-
-  const filteredBusinesses = businesses.filter(
-    (business) =>
-      business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (business.address &&
-        business.address.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   const getTypeConfig = (type: string) => {
-    switch (type) {
-      case "store":
-        return {
-          label: "Do'kon",
-          icon: Store,
-          color:
-            "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
-        };
-      case "business":
-        return {
-          label: "Biznes",
-          icon: Briefcase,
-          color:
-            "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
-        };
-      case "education":
-        return {
-          label: "O'quv Markazi",
-          icon: GraduationCap,
-          color:
-            "bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400",
-        };
-      default:
-        return {
-          label: type,
-          icon: Building2,
-          color:
-            "bg-slate-50 text-slate-700 dark:bg-slate-950/30 dark:text-slate-400",
-        };
-    }
-  };
-
-  const handleRowClick = (businessId: string) => {
-    router.push(`/businesses/${businessId}`);
-  };
-
-  const handleActionClick = (e: React.MouseEvent, businessId: string) => {
-    e.stopPropagation();
-    setActiveDropdown(activeDropdown === businessId ? null : businessId);
-  };
-
-  if (loading) {
+    const configs = {
+      store: {
+        label: "Do'kon",
+        icon: Store,
+        color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      },
+      business: {
+        label: "Biznes",
+        icon: Briefcase,
+        color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      },
+      education: {
+        label: "O'quv Markazi",
+        icon: GraduationCap,
+        color: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+      },
+    };
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Yuklanmoqda...</p>
-        </div>
+      configs[type as keyof typeof configs] || {
+        label: type,
+        icon: Building2,
+        color: "bg-slate-500/10 text-slate-500",
+      }
+    );
+  };
+
+  const filtered = businesses.filter((b) =>
+    b.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading)
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
-  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-2 pb-0 px-0 sm:px-0 lg:px-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+    <div className="max-w-full mx-auto space-y-6 p-0 lg:p-0 relative min-h-screen pb-20">
+      {/* Search & Header */}
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Qidirish..."
+            className={`pl-10 h-11 ${inputBaseStyles}`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <Button size="lg" onClick={() => openModal()}>
-          <Plus className="mr-2 h-5 w-5" />
-          Yangi Biznes
+        <Button
+          onClick={() => handleOpenModal()}
+          className="hidden md:flex shadow-sm"
+        >
+          <Plus className="mr-2 h-5 w-5" /> Yangi Biznes
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          placeholder="Biznes nomi, turi yoki manzil bo'yicha qidirish..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
-      </div>
+      {/* Floating Action Button - Mobile */}
+      <Button
+        onClick={() => handleOpenModal()}
+        size="icon"
+        className="md:hidden fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full shadow-2xl active:scale-90 transition-transform"
+      >
+        <Plus className="h-7 w-7" />
+      </Button>
 
-      {/* Empty State */}
-      {filteredBusinesses.length === 0 ? (
-        <Card className="border-dashed border-slate-300">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="p-6 rounded-full bg-muted/50 mb-6">
-              <Store className="h-16 w-16 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">
-              {searchQuery ? "Hech narsa topilmadi" : "Hozircha bizneslar yoʻq"}
-            </h3>
-            <p className="text-muted-foreground max-w-sm mb-6">
-              {searchQuery
-                ? "Boshqa kalit soʻz bilan qidirib koʻring"
-                : "Birinchi biznesingizni qoʻshing va moliyaviy hisobotlarni boshlang"}
-            </p>
-            {!searchQuery && (
-              <Button size="lg" onClick={() => openModal()}>
-                <Plus className="mr-2 h-5 w-5" />
-                Birinchi Biznesni Qo'shish
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Desktop: Shadcn Table */}
-          <div className="hidden lg:block">
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Biznes</TableHead>
-                    <TableHead>Turi</TableHead>
-                    <TableHead>Aloqa</TableHead>
-                    <TableHead>Manzil</TableHead>
-                    <TableHead>Yaratilgan</TableHead>
-                    <TableHead className="text-right">Amallar</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBusinesses.map((business) => {
-                    const {
-                      label,
-                      icon: Icon,
-                      color,
-                    } = getTypeConfig(business.type);
-                    return (
-                      <TableRow
-                        key={business.$id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleRowClick(business.$id)}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-4">
-                            <div
-                              className={`p-3 rounded-xl ${
-                                color.split(" ")[0]
-                              } ${color.split(" ")[1]}`}
-                            >
-                              <Icon className="h-6 w-6" />
-                            </div>
-                            <div>
-                              <div className="font-semibold">
-                                {business.name}
-                              </div>
-                              {business.description && (
-                                <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                                  {business.description}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={color}>
-                            {label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1 text-sm">
-                            {business.phone && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Phone className="h-4 w-4" />
-                                {business.phone}
-                              </div>
-                            )}
-                            {business.email && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Mail className="h-4 w-4" />
-                                {business.email}
-                              </div>
-                            )}
-                            {!business.phone && !business.email && "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {business.address || "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(business?.$createdAt)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openModal(business);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(business.$id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </Card>
-          </div>
-
-          {/* Mobile: Cards */}
-          <div className="lg:hidden grid gap-4">
-            {filteredBusinesses.map((business) => {
-              const { label, icon: Icon, color } = getTypeConfig(business.type);
-              return (
-                <Card
-                  key={business.$id}
-                  className="hover:shadow-md transition-shadow"
-                  onClick={() => handleRowClick(business.$id)}
-                >
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className={`p-3 rounded-xl ${color}`}>
-                          <Icon className="h-6 w-6" />
+      {/* Content */}
+      <div className="space-y-4">
+        {/* Desktop Table */}
+        <div className="hidden lg:block bg-card border rounded-2xl overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Biznes</TableHead>
+                <TableHead>Turi</TableHead>
+                <TableHead>Aloqa</TableHead>
+                <TableHead>Sana</TableHead>
+                <TableHead className="text-right">Amallar</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((b) => {
+                const config = getTypeConfig(b.type);
+                return (
+                  <TableRow
+                    key={b.$id}
+                    className="hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => router.push(`/businesses/${b.$id}`)}
+                  >
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl ${config.color}`}>
+                          <config.icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">
-                            {business.name}
-                          </h3>
-                          <Badge
-                            variant="secondary"
-                            className={`mt-2 ${color}`}
-                          >
-                            {label}
-                          </Badge>
-                        </div>
+                        <span className="font-semibold">{b.name}</span>
                       </div>
-                      <div className="relative">
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={`${config.color} border-none`}
+                      >
+                        {config.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {b.phone || "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(b.$createdAt)}
+                    </TableCell>
+                    <TableCell
+                      className="text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => handleActionClick(e, business.$id)}
+                          onClick={() => handleOpenModal(b)}
                         >
-                          <MoreVertical className="h-5 w-5" />
+                          <Edit className="h-4 w-4" />
                         </Button>
-                        {activeDropdown === business.$id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-card border rounded-lg shadow-lg z-10">
-                            <button
-                              className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-3"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openModal(business);
-                                setActiveDropdown(null);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 text-blue-600" />
-                              Tahrirlash
-                            </button>
-                            <button
-                              className="w-full px-4 py-3 text-left hover:bg-muted flex items-center gap-3 border-t"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(business.$id);
-                                setActiveDropdown(null);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                              O'chirish
-                            </button>
-                          </div>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDelete(b.$id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-
-                    {business.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {business.description}
-                      </p>
-                    )}
-
-                    <div className="space-y-3 text-sm text-muted-foreground">
-                      {business.address && (
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-5 w-5 mt-0.5" />
-                          <span>{business.address}</span>
-                        </div>
-                      )}
-                      {business.phone && (
-                        <div className="flex items-center gap-3">
-                          <Phone className="h-5 w-5" />
-                          <span>{business.phone}</span>
-                        </div>
-                      )}
-                      {business.email && (
-                        <div className="flex items-center gap-3">
-                          <Mail className="h-5 w-5" />
-                          <span>{business.email}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 pt-3 border-t">
-                        <Calendar className="h-5 w-5" />
-                        <span>{formatDate(business?.$createdAt)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Modal – o'zgarmadi, faqat slate border saqlangan */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-background">
-            <CardHeader className="border-b sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">
-                  {editingBusiness
-                    ? "Biznesni Tahrirlash"
-                    : "Yangi Biznes Qo'shish"}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowModal(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Biznes Nomi *</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      placeholder="Masalan: Super Market"
-                      required
-                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Biznes Turi *</Label>
-                    <select
-                      value={formData.type}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          type: e.target.value as any,
-                        })
-                      }
-                      required
-                      className="w-full h-11 px-4 rounded-lg border border-slate-300 bg-background text-foreground focus:border-slate-500 focus:outline-none transition-colors"
-                    >
-                      <option value="store">Do'kon</option>
-                      <option value="business">Umumiy Biznes</option>
-                      <option value="education">O'quv Markazi</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Manzil</Label>
-                    <Input
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
-                      }
-                      placeholder="Toshkent, Chilanzar..."
-                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Telefon</Label>
-                    <Input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      placeholder="+998 90 123 45 67"
-                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="info@biznes.uz"
-                      className="h-11 border-slate-300 focus:border-slate-500 outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Tavsif (ixtiyoriy)</Label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      rows={4}
-                      placeholder="Bu biznes haqida qisqacha ma'lumot..."
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-background text-foreground placeholder:text-muted-foreground focus:border-slate-500 focus:outline-none resize-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                  <Button type="submit" size="lg" className="flex-1 h-12">
-                    {editingBusiness ? "Saqlash" : "Qo'shish"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    className="h-12"
-                    onClick={() => setShowModal(false)}
-                  >
-                    Bekor qilish
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
-      )}
+
+        {/* Mobile Cards */}
+        <div className="lg:hidden grid gap-4">
+          {filtered.map((b) => {
+            const config = getTypeConfig(b.type);
+            return (
+              <Card
+                key={b.$id}
+                className="bg-card hover:border-primary/50 transition-colors shadow-sm"
+                onClick={() => router.push(`/businesses/${b.$id}`)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2.5 rounded-xl ${config.color}`}>
+                        <config.icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg leading-tight">
+                          {b.name}
+                        </h4>
+                        <Badge
+                          variant="secondary"
+                          className={`mt-1 ${config.color} border-none`}
+                        >
+                          {config.label}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenModal(b)}>
+                            <Edit className="mr-2 h-4 w-4" /> Tahrirlash
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(b.$id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> O'chirish
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    {b.address && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground leading-none">
+                        <MapPin className="h-3.5 w-3.5" /> {b.address}
+                      </div>
+                    )}
+                    {b.phone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground leading-none">
+                        <Phone className="h-3.5 w-3.5" /> {b.phone}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Modal */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingBusiness
+                ? "Biznesni tahrirlash"
+                : "Yangi biznes qo'shish"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Biznes nomi *</Label>
+              <Input
+                required
+                className={inputBaseStyles}
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Turi</Label>
+                <select
+                  className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:border-primary`}
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, type: e.target.value as any })
+                  }
+                >
+                  <option value="store">Do'kon</option>
+                  <option value="business">Biznes</option>
+                  <option value="education">O'quv markazi</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Telefon</Label>
+                <Input
+                  className={inputBaseStyles}
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Manzil</Label>
+              <Input
+                className={inputBaseStyles}
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tavsif (ixtiyoriy)</Label>
+              <textarea
+                className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary`}
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
+            </div>
+            <DialogFooter className="gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Bekor qilish
+              </Button>
+              <Button type="submit" disabled={actionLoading}>
+                {actionLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}{" "}
+                Saqlash
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

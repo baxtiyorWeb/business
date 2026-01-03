@@ -8,46 +8,35 @@ import {
   User,
   Settings,
   LogOut,
-  Menu,
-  X,
   Moon,
   Sun,
-  Crown,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { account } from "@/lib/appwrite";
 import { useState, useEffect } from "react";
 
+// Navigatsiya elementlari va ularning ranglari
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Bizneslar", href: "/businesses", icon: Store },
-  { name: "Profil", href: "/profile", icon: User },
-  { name: "Sozlamalar", href: "/settings", icon: Settings },
+  { name: "Asosiy", href: "/", icon: LayoutDashboard, color: "text-blue-500" },
+  {
+    name: "Bizneslar",
+    href: "/businesses",
+    icon: Store,
+    color: "text-emerald-500",
+  },
+  { name: "Profil", href: "/profile", icon: User, color: "text-purple-500" },
+  {
+    name: "Sozlamalar",
+    href: "/settings",
+    icon: Settings,
+    color: "text-amber-500",
+  },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [mobileMenuOpen]);
 
   // Theme management
   useEffect(() => {
@@ -88,61 +77,49 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            {/* Logo */}
-            <div className="flex items-center shrink-0">
-              <Link href="/" className="flex items-center">
-                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50">
-                  Business App
-                </h1>
+      {/* --- DESKTOP TOP NAVIGATION --- */}
+      <nav className="hidden md:block sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-8">
+              <Link
+                href="/"
+                className="font-bold text-xl text-slate-900 dark:text-slate-50"
+              >
+                Business App
               </Link>
+              <div className="flex items-center space-x-1">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname?.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50"
+                          : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Icon
+                        className={`mr-2 h-4 w-4 ${isActive ? item.color : ""}`}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex md:items-center md:space-x-1 lg:space-x-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname?.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                    }`}
-                  >
-                    <Icon className="mr-2 h-4 w-4" />
-                    <span className="hidden lg:inline">{item.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Desktop Actions */}
-            <div className="hidden md:flex md:items-center md:ml-4 md:gap-2">
-              {/* Premium Button
-              <Link href="/pricing">
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all"
-                >
-                  <Crown className="mr-2 h-4 w-4" />
-                  <span className="hidden lg:inline">Premium</span>
-                </Button>
-              </Link> */}
-
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800"
-                title="Temani o'zgartirish"
+                className="dark:text-slate-400"
               >
                 {theme === "dark" ? (
                   <Moon className="h-4 w-4" />
@@ -154,140 +131,95 @@ export function Navigation() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span className="hidden lg:inline">Chiqish</span>
-              </Button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-slate-600 dark:text-slate-400"
-                aria-label="Toggle menu"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
+                <LogOut className="mr-2 h-4 w-4" /> Chiqish
               </Button>
             </div>
           </div>
         </div>
-
-        {/* Mobile menu overlay */}
-        {mobileMenuOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div className="fixed inset-y-0 right-0 z-50 w-64 bg-white dark:bg-slate-900 shadow-xl md:hidden transform transition-transform duration-300 ease-in-out">
-              <div className="flex flex-col h-full">
-                {/* Mobile menu header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-                    Menu
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-slate-600 dark:text-slate-400"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-
-                {/* Premium Banner Mobile */}
-                {/* <div className="p-4">
-                  <Link
-                    href="/pricing"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-pink-500 p-4 text-white shadow-lg hover:shadow-xl transition-all">
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Crown className="h-5 w-5" />
-                          <span className="font-bold text-lg">Premium</span>
-                        </div>
-                        <p className="text-sm text-white/90">
-                          Cheklovsiz imkoniyatlar
-                        </p>
-                      </div>
-                      <Sparkles className="absolute -right-2 -bottom-2 h-20 w-20 text-white/20" />
-                    </div>
-                  </Link>
-                </div> */}
-
-                {/* Mobile menu items */}
-                <div className="flex-1 overflow-y-auto py-2">
-                  {navigation.map((item) => {
-                    const Icon = item.icon;
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href !== "/" && pathname?.startsWith(item.href));
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center px-4 py-3 mx-2 rounded-lg text-base font-medium transition-colors ${
-                          isActive
-                            ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300"
-                        }`}
-                      >
-                        <Icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                {/* Mobile actions */}
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      toggleTheme();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full justify-start text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
-                  >
-                    {theme === "dark" ? (
-                      <Moon className="mr-3 h-5 w-5" />
-                    ) : (
-                      <Sun className="mr-3 h-5 w-5" />
-                    )}
-                    {theme === "dark"
-                      ? "Qorong'u"
-                      : theme === "light"
-                      ? "Yorug'"
-                      : "Tizim"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full justify-start text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-300"
-                  >
-                    <LogOut className="mr-3 h-5 w-5" />
-                    Chiqish
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </nav>
+
+      {/* --- MOBILE BOTTOM NAVIGATION --- */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe">
+        <div className="flex justify-around items-center h-16 px-2">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname?.startsWith(item.href));
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="flex flex-col items-center justify-center flex-1 min-w-0 py-1"
+              >
+                <div
+                  className={`p-1.5 rounded-xl transition-all duration-300 ${
+                    isActive ? `bg-slate-100 dark:bg-slate-800 scale-110` : ""
+                  }`}
+                >
+                  <Icon
+                    className={`h-6 w-6 ${
+                      isActive
+                        ? item.color
+                        : "text-slate-400 dark:text-slate-500"
+                    }`}
+                  />
+                </div>
+                <span
+                  className={`text-[10px] mt-1 font-medium transition-colors ${
+                    isActive
+                      ? "text-slate-900 dark:text-white"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {item.name}
+                </span>
+                {isActive && (
+                  <div
+                    className={`h-1 w-1 rounded-full mt-0.5 ${item.color.replace(
+                      "text",
+                      "bg"
+                    )}`}
+                  />
+                )}
+              </Link>
+            );
+          })}
+
+          {/* Mobil uchun Theme va Chiqish tugmasini Profil yoki Settings ichiga qo'shish tavsiya etiladi, 
+              lekin bu yerda ham bitta qo'shimcha "Menu" sifatida qoldirish mumkin */}
+          <button
+            onClick={toggleTheme}
+            className="flex flex-col items-center justify-center flex-1 py-1"
+          >
+            <div className="p-1.5">
+              {theme === "dark" ? (
+                <Moon className="h-6 w-6 text-slate-400" />
+              ) : (
+                <Sun className="h-6 w-6 text-slate-400" />
+              )}
+            </div>
+            <span className="text-[10px] text-slate-500">Mavzu</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Top Header (Faqat Logo va Chiqish uchun) */}
+      <header className="md:hidden sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 h-14 flex items-center justify-between px-4">
+        <span className="font-bold text-slate-900 dark:text-white">
+          Business App
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          className="text-slate-400"
+        >
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </header>
     </>
   );
 }
