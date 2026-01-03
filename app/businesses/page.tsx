@@ -246,11 +246,10 @@ export default function BusinessesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-2 pb-0 px-4 sm:px-6 lg:px-0">
+    <div className="max-w-7xl mx-auto space-y-2 pb-0 px-0 sm:px-0 lg:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-        
         </div>
         <Button size="lg" onClick={() => openModal()}>
           <Plus className="mr-2 h-5 w-5" />

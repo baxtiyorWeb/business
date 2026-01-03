@@ -118,7 +118,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-dvw mx-auto space-y-1 py-0 px-4 sm:px-6 lg:px-0">
+    <div className="max-w-dvw mx-auto space-y-1 py-0 px-0 sm:px-0 lg:px-0">
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Parolni o'zgartirish */}

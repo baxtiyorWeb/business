@@ -183,7 +183,7 @@ export default function ProfilePage() {
               Profilingizning asosiy ma'lumotlari
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-0 sm:px-0 pb-4 sm:pb-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               <div className="relative group">
                 <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
