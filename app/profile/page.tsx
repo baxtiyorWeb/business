@@ -112,11 +112,11 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-24">
+    <div className="max-w-dvw mx-auto space-y-6 ">
       {/* Header & Avatar Section */}
       <div className="flex flex-col items-center sm:flex-row sm:items-end gap-5 px-2">
         <div className="relative group">
-          <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-gradient-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-300">
+          <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-linear-to-tr from-blue-600 to-purple-600 p-1 shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-300">
             <div className="h-full w-full rounded-[20px] bg-card flex items-center justify-center overflow-hidden -rotate-3 group-hover:rotate-0 transition-transform duration-300">
               {user.avatar ? (
                 <img
