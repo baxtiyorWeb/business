@@ -254,7 +254,7 @@ export default function BusinessDetailPage() {
       </div>
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid lg:grid-cols-3">
         <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-medium">Daromad</CardTitle>
@@ -304,7 +304,7 @@ export default function BusinessDetailPage() {
       <div className="space-y-3">
         <h3 className="font-semibold text-lg px-1">So'nggi harakatlar</h3>
         {transactions.length === 0 ? (
-          <div className="text-center py-10 border rounded-xl bg-muted/20">
+          <div className="text-center py-10 border border-slate-500 rounded-xl bg-muted/20">
             <p className="text-muted-foreground">Hozircha ma'lumot yo'q</p>
           </div>
         ) : (
