@@ -56,7 +56,7 @@ export default function SettingsPage() {
   // LOADING SKELETON
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 px-4 py-8 pb-20">
+      <div className="max-w-dvw mx-auto space-y-4 px-0 lg:px-4 py-0 pb-0">
         <div className="space-y-2 text-center sm:text-left">
           <Skeleton className="h-10 w-64 mx-auto sm:mx-0" />
           <Skeleton className="h-5 w-96 mx-auto sm:mx-0" />
@@ -66,7 +66,7 @@ export default function SettingsPage() {
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="border-none shadow-sm">
               <CardHeader>
-                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-6 w-56" />
               </CardHeader>
               <CardContent className="space-y-4">
                 {[...Array(3)].map((_, j) => (
@@ -77,7 +77,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-4">
                       <Skeleton className="h-10 w-10 rounded-lg" />
                       <div>
-                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-5 w-52" />
                         <Skeleton className="h-4 w-60 mt-2" />
                       </div>
                     </div>
@@ -97,8 +97,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 px-4 py-8 pb-20">
-      {/* Sarlavha */}
+    <div className="max-w-dvw mx-auto space-y-4 px-0 py-0 ">
       <div className="text-center sm:text-left">
         <h1 className="text-3xl font-bold tracking-tight">Sozlamalar</h1>
         <p className="text-muted-foreground mt-2">
@@ -107,7 +106,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
-        {/* Ko'rinish */}
         <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Ko'rinish</CardTitle>
@@ -143,7 +141,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Bildirishnomalar */}
         <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Bildirishnomalar</CardTitle>
@@ -181,7 +178,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Xavfsizlik */}
         <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Xavfsizlik</CardTitle>
@@ -224,7 +220,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Hisob */}
         <Card className="border-none bg-card/60 backdrop-blur-sm shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Hisob</CardTitle>
@@ -248,7 +243,6 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      {/* Chiqish tugmasi */}
       <div className="pt-6">
         <Button
           onClick={handleLogout}
