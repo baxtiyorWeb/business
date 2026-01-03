@@ -239,8 +239,7 @@ export default function BusinessesPage() {
   }
 
   return (
-    <div className="space-y-4 px-5 sm:px-0 lg:px-0 sm:space-y-6 w-full max-w-full ">
-      {/* Header */}
+    <div className="space-y-4 px-5 sm:px-0 lg:px-0 lg:p-0 sm:space-y-6 w-full max-w-full ">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div></div>
         <Button
@@ -253,7 +252,6 @@ export default function BusinessesPage() {
         </Button>
       </div>
 
-      {/* Search */}
       <div className="relative w-full">
         <Search className="absolute  left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
         <Input
@@ -264,7 +262,6 @@ export default function BusinessesPage() {
         />
       </div>
 
-      {/* Empty State */}
       {filteredBusinesses.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
@@ -293,7 +290,6 @@ export default function BusinessesPage() {
         </Card>
       ) : (
         <>
-          {/* Desktop Table View - Hidden on mobile */}
           <div className="hidden md:block">
             <Card>
               <div className="overflow-x-auto">
@@ -434,7 +430,6 @@ export default function BusinessesPage() {
             </Card>
           </div>
 
-          {/* Mobile Card View - Visible only on mobile */}
           <div className="md:hidden grid gap-4">
             {filteredBusinesses.map((business) => {
               const { label, icon: Icon, color } = getTypeConfig(business.type);
@@ -543,7 +538,6 @@ export default function BusinessesPage() {
         </>
       )}
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[90vh] overflow-y-auto sm:rounded-lg rounded-none">

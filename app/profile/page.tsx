@@ -172,19 +172,8 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Profil
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1">
-          Shaxsiy ma'lumotlaringizni boshqaring
-        </p>
-      </div>
-
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden lg:p-0">
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* Shaxsiy Ma'lumotlar Card */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4 sm:pb-6">
             <CardTitle className="text-lg sm:text-xl">
@@ -195,7 +184,6 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
-            {/* Avatar Section */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               <div className="relative group">
                 <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
@@ -212,7 +200,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Hover Overlay - Desktop uchun */}
                 <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hidden sm:flex">
                   <div className="flex gap-2">
                     <button
@@ -261,7 +248,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Mobile Upload Buttons */}
             <div className="flex gap-2 sm:hidden">
               <Button
                 variant="outline"
@@ -286,7 +272,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* User Info & Edit Section */}
             {!editing ? (
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
@@ -397,7 +382,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Hisob Xavfsizligi Card */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4 sm:pb-6">
             <CardTitle className="text-lg sm:text-xl">
