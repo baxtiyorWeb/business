@@ -1,46 +1,71 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { account } from '@/lib/appwrite';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { account } from "@/lib/appwrite";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Mail,
+  Lock,
+  User,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  ChevronLeft,
+} from "lucide-react";
+import { OAuthProvider } from "appwrite";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot">(
+    "login"
+  );
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      if (isLogin) {
-        // Login
+      if (authMode === "login") {
+        // --- KIRISH ---
+        try {
+          await account.deleteSession("current");
+        } catch (e) {
+          // Sessiya bo'lmasa xatoni o'tkazib yuboramiz
+        }
         await account.createEmailPasswordSession(email, password);
-        setSuccess('Muvaffaqiyatli kirildi!');
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
+        setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
+        setTimeout(() => router.push("/"), 1500);
+      } else if (authMode === "signup") {
+        // --- RO'YXATDAN O'TISH ---
+        await account.create("unique()", email, password, name);
+        await account.createEmailPasswordSession(email, password);
+        await account.createVerification(`${window.location.origin}/verify`);
+        setSuccess("Hisob yaratildi! Emailingizni tasdiqlang.");
+        setEmail("");
+        setPassword("");
+        setName("");
       } else {
-        // Signup
-        await account.create('unique()', email, password, name);
-        setSuccess('Hisob yaratildi! Iltimos, emailingizni tasdiqlang.');
-        // Auto login after signup
-        setTimeout(async () => {
-          await account.createEmailPasswordSession(email, password);
-          router.push('/');
-        }, 2000);
+        // --- PAROLNI TIKLASH ---
+        await account.createRecovery(
+          email,
+          `${window.location.origin}/reset-password`
+        );
+        setSuccess("Parolni tiklash havolasi emailingizga yuborildi.");
       }
     } catch (err: any) {
-      setError(err.message || 'Xatolik yuz berdi');
+      setError(err.message || "Xatolik yuz berdi.");
     } finally {
       setLoading(false);
     }
@@ -49,238 +74,217 @@ export default function AuthPage() {
   const handleGoogleAuth = async () => {
     try {
       setLoading(true);
-      setError('');
-      account.createOAuth2Session(
-        'google' as any,
+
+      await account.createOAuth2Session(
+        OAuthProvider.Google,
         `${window.location.origin}/`,
         `${window.location.origin}/auth`
-      )
+      );
     } catch (err: any) {
-      setError(err.message || 'Google bilan kirishda xatolik yuz berdi');
+      setError("Google orqali kirishda xatolik.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-          {/* Header with gradient */}
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-6">
-            <h1 className="text-3xl font-bold text-white text-center">
-              {isLogin ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
-            </h1>
-            <p className="text-blue-100 text-center mt-2 text-sm">
-              {isLogin 
-                ? 'Hisobingizga kiring' 
-                : 'Yangi hisob yarating'}
-            </p>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => {
-                setIsLogin(true);
-                setError('');
-                setSuccess('');
-              }}
-              className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                isLogin
-                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Kirish
-            </button>
-            <button
-              onClick={() => {
-                setIsLogin(false);
-                setError('');
-                setSuccess('');
-              }}
-              className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                !isLogin
-                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Ro'yxatdan o'tish
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm">
-                {success}
-              </div>
-            )}
-
-            {/* Name field (only for signup) */}
-            {!isLogin && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Ism
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required={!isLogin}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all"
-                  placeholder="Ismingizni kiriting"
-                />
-              </div>
-            )}
-
-            {/* Email field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all"
-                placeholder="email@example.com"
-              />
-            </div>
-
-            {/* Password field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Parol
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all"
-                placeholder="••••••••"
-              />
-              {!isLogin && (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Kamida 8 ta belgi bo'lishi kerak
-                </p>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-300 dark:border-slate-600"></span>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-800 px-2 text-slate-500 dark:text-slate-400">
-                  Yoki
-                </span>
-              </div>
-            </div>
-
-            {/* Google Auth Button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleAuth}
-              disabled={loading}
-              className="w-full border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Google bilan {isLogin ? 'Kirish' : "Ro'yxatdan o'tish"}
-            </Button>
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Kutilmoqda...
-                </span>
-              ) : (
-                isLogin ? 'Kirish' : 'Ro\'yxatdan o\'tish'
-              )}
-            </button>
-
-            {/* Forgot password link (only for login) */}
-            {isLogin && (
-              <div className="text-center">
-                <a
-                  href="#"
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-                >
-                  Parolni unutdingizmi?
-                </a>
-              </div>
-            )}
-          </form>
-
-          {/* Footer */}
-          <div className="px-8 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700">
-            <p className="text-xs text-center text-slate-500 dark:text-slate-400">
-              {isLogin 
-                ? "Hisobingiz yo'qmi? " 
-                : "Allaqachon hisobingiz bormi? "}
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                  setSuccess('');
-                }}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-              >
-                {isLogin ? "Ro'yxatdan o'tish" : 'Kirish'}
-              </button>
-            </p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 font-sans text-slate-900 dark:text-slate-100">
+      <div className="w-full max-w-[440px] space-y-6 sm:space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {authMode === "login" && ""}
+            {authMode === "signup" && ""}
+            {authMode === "forgot" && "Parolni tiklash"}
+          </h1>
+          <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 px-4">
+            {authMode === "login" &&
+              "Tizimga kirish uchun maʼlumotlarni kiriting"}
+            {authMode === "signup" &&
+              "Platformadan foydalanish uchun roʻyxatdan oʻting"}
+            {authMode === "forgot" &&
+              "Emailingizni kiriting va biz sizga havola yuboramiz"}
+          </p>
         </div>
 
-        {/* Additional info */}
-        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-          Appwrite bilan xavfsiz autentifikatsiya
+        {/* Card */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-md p-6 sm:p-8 transition-all">
+          {error && (
+            <div className="mb-6 flex items-start gap-3 p-4 text-sm bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-xl">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 flex items-start gap-3 p-4 text-sm bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              <p>{success}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+            {authMode === "signup" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium ml-1">To'liq ism</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium ml-1">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 transition-all"
+                  placeholder="name@example.com"
+                />
+              </div>
+            </div>
+
+            {authMode !== "forgot" && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <label className="text-sm font-medium">Parol</label>
+                  {authMode === "login" && (
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("forgot")}
+                      className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+                    >
+                      Unutdingizmi?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <Button
+              disabled={loading}
+              className="w-full py-6 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white rounded-xl font-semibold shadow-lg transition-all active:scale-[0.98]"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <>
+                  {authMode === "login" && "Kirish"}
+                  {authMode === "signup" && "Ro'yxatdan o'tish"}
+                  {authMode === "forgot" && "Yuborish"}
+                </>
+              )}
+            </Button>
+
+            {authMode !== "forgot" && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-slate-900 px-3 text-slate-500">
+                      Yoki
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGoogleAuth}
+                  disabled={loading}
+                  className="w-full py-6 border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex gap-3 transition-all"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  Google orqali
+                </Button>
+              </>
+            )}
+
+            {authMode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => setAuthMode("login")}
+                className="flex items-center justify-center w-full gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
+              >
+                <ChevronLeft size={16} /> Orqaga qaytish
+              </button>
+            )}
+          </form>
+        </div>
+
+        {/* Footer */}
+        {authMode !== "forgot" && (
+          <p className="text-center text-sm text-slate-500">
+            {authMode === "login"
+              ? "Hali a'zo emasmisiz?"
+              : "Hisobingiz bormi?"}{" "}
+            <button
+              onClick={() => {
+                setAuthMode(authMode === "login" ? "signup" : "login");
+                setError("");
+                setSuccess("");
+              }}
+              className="text-slate-900 dark:text-white font-bold hover:underline underline-offset-4"
+            >
+              {authMode === "login" ? "Ro'yxatdan o'ting" : "Tizimga kiring"}
+            </button>
+          </p>
+        )}
+
+        <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest">
+          Secure Cloud Authentication • Appwrite
         </p>
       </div>
     </div>
   );
 }
-
