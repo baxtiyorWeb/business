@@ -234,7 +234,7 @@ export default function Dashboard() {
       {/* Main Stats Cards - Professional va yengil ranglar */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Jami Balans
@@ -245,7 +245,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+            <div className="text-2xl sm:text-sm lg:text-xl font-bold">
               {formatCurrency(stats.totalRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2 flex items-center">
@@ -267,7 +267,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Bizneslar
@@ -278,7 +278,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+          <div className="text-2xl sm:text-sm lg:text-xl font-bold">
               {stats.totalBusinesses}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -288,7 +288,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-purple-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Mijozlar
@@ -299,7 +299,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+             <div className="text-2xl sm:text-sm lg:text-xl font-bold">
               {stats.totalCustomers}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
@@ -309,7 +309,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="border-l-4 border-l-orange-500 hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardHeader className="pb-2 px-4 sm:px-6 pt-4  sm:pt-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Bugun
@@ -320,7 +320,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+             <div className="text-2xl sm:text-sm lg:text-xl font-bold">
               {formatCurrency(stats.dailyRevenue)}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">
