@@ -31,7 +31,7 @@ import {
 } from "@/lib/appwrite";
 import { account } from "@/lib/appwrite";
 import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast"; // shadcn toast
 
 interface Business {
   $id: string;
@@ -91,6 +91,32 @@ export default function BusinessesPage() {
     }
   };
 
+  // Modalni ochish: yangi yoki tahrirlash
+  const openModal = (business?: Business) => {
+    if (business) {
+      setEditingBusiness(business);
+      setFormData({
+        name: business.name,
+        type: business.type,
+        address: business.address || "",
+        phone: business.phone || "",
+        email: business.email || "",
+        description: business.description || "",
+      });
+    } else {
+      setEditingBusiness(null);
+      setFormData({
+        name: "",
+        type: "store",
+        address: "",
+        phone: "",
+        email: "",
+        description: "",
+      });
+    }
+    setShowModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -123,32 +149,11 @@ export default function BusinessesPage() {
 
       setShowModal(false);
       setEditingBusiness(null);
-      setFormData({
-        name: "",
-        type: "store",
-        address: "",
-        phone: "",
-        email: "",
-        description: "",
-      });
       loadBusinesses();
     } catch (error) {
       console.error("Error saving business:", error);
       toast.error("Saqlashda xatolik yuz berdi.");
     }
-  };
-
-  const handleEdit = (business: Business) => {
-    setEditingBusiness(business);
-    setFormData({
-      name: business.name,
-      type: business.type,
-      address: business.address || "",
-      phone: business.phone || "",
-      email: business.email || "",
-      description: business.description || "",
-    });
-    setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -210,7 +215,7 @@ export default function BusinessesPage() {
         </div>
         <Button
           size="lg"
-          onClick={() => setShowModal(true)}
+          onClick={() => openModal()}
           className="w-full sm:w-auto"
         >
           <Plus className="mr-2 h-5 w-5" />
@@ -245,7 +250,7 @@ export default function BusinessesPage() {
                 : "Birinchi biznesingizni qoʻshing va daromadlarni kuzatishni boshlang"}
             </p>
             {!searchQuery && (
-              <Button size="lg" onClick={() => setShowModal(true)}>
+              <Button size="lg" onClick={() => openModal()}>
                 <Plus className="mr-2 h-5 w-5" />
                 Birinchi Biznesni Qo'shish
               </Button>
@@ -290,6 +295,13 @@ export default function BusinessesPage() {
                     </div>
 
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openModal(business)}
+                      >
+                        <Edit className="h-4 w-4 text-blue-600" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -348,9 +360,9 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal - Yangi yoki Tahrirlash */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <CardHeader className="border-b">
               <div className="flex justify-between items-center">
@@ -370,8 +382,109 @@ export default function BusinessesPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* ... modal ichidagi formalar oʻzgarmaydi, faqat yuqoridagi oʻzgartirishlar kerak */}
-                {/* (oldingi kod bilan bir xil qoldiriladi) */}
+                <div>
+                  <Label htmlFor="name" className="text-base">
+                    Biznes Nomi *
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                    placeholder="Masalan: Super Market"
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="type" className="text-base">
+                    Biznes Turi *
+                  </Label>
+                  <select
+                    id="type"
+                    value={formData.type}
+                    onChange={(e) =>
+                      setFormData({ ...formData, type: e.target.value as any })
+                    }
+                    className="mt-2 flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    required
+                  >
+                    <option value="store">Do'kon</option>
+                    <option value="business">Umumiy Biznes</option>
+                    <option value="education">O'quv Markazi</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="address">Manzil</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                    placeholder="Toshkent, Chilanzar tumani..."
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="phone">Telefon Raqami</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    placeholder="+998 90 123 45 67"
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    placeholder="info@biznes.uz"
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Qisqacha Tavsif</Label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows={3}
+                    className="mt-2 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Biznesingiz haqida qisqa ma'lumot..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="submit" size="lg" className="flex-1">
+                    {editingBusiness ? "Saqlash" : "Qo'shish"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Bekor qilish
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
