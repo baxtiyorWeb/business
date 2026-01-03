@@ -111,10 +111,13 @@ export default function ProfilePage() {
 
       const userData = await account.get();
       const prefs = userData.prefs || {};
+
       if (prefs.avatarId) {
         try {
           await storage.deleteFile(AVATARS_BUCKET_ID, prefs.avatarId);
-        } catch (e) {}
+        } catch (e) {
+          console.warn("Oldingi avatarni o'chirishda xatolik:", e);
+        }
       }
 
       const fileId = ID.unique();
@@ -157,8 +160,10 @@ export default function ProfilePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Yuklanmoqda...</p>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground">
+            Yuklanmoqda...
+          </p>
         </div>
       </div>
     );
@@ -167,21 +172,33 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Shaxsiy Ma'lumotlar */}
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
+      {/* Header */}
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Profil
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">
+          Shaxsiy ma'lumotlaringizni boshqaring
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        {/* Shaxsiy Ma'lumotlar Card */}
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-xl">Shaxsiy Ma'lumotlar</CardTitle>
-            <CardDescription>
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-lg sm:text-xl">
+              Shaxsiy Ma'lumotlar
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Profilingizning asosiy ma'lumotlari
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
             {/* Avatar Section */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               <div className="relative group">
-                <div className="h-28 w-28 rounded-full bg-linear-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
+                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
                   <div className="h-full w-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                     {user.avatar ? (
                       <img
@@ -190,30 +207,30 @@ export default function ProfilePage() {
                         className="w-full h-full object-cover rounded-full"
                       />
                     ) : (
-                      <User className="h-14 w-14 text-blue-600 dark:text-blue-400" />
+                      <User className="h-12 w-12 sm:h-14 sm:w-14 text-blue-600 dark:text-blue-400" />
                     )}
                   </div>
                 </div>
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="flex gap-3">
+                {/* Hover Overlay - Desktop uchun */}
+                <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hidden sm:flex">
+                  <div className="flex gap-2">
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="p-3 bg-white/90 hover:bg-white rounded-full transition-colors"
+                      className="p-2.5 bg-white/90 hover:bg-white rounded-full transition-colors"
                       title="Yuklash"
                     >
-                      <Camera className="h-5 w-5 text-slate-900" />
+                      <Camera className="h-4 w-4 text-slate-900" />
                     </button>
                     {user.avatar && (
                       <button
                         onClick={handleRemoveAvatar}
                         disabled={uploading}
-                        className="p-3 bg-white/90 hover:bg-white rounded-full transition-colors"
+                        className="p-2.5 bg-white/90 hover:bg-white rounded-full transition-colors"
                         title="O'chirish"
                       >
-                        <Trash2 className="h-5 w-5 text-red-600" />
+                        <Trash2 className="h-4 w-4 text-red-600" />
                       </button>
                     )}
                   </div>
@@ -227,116 +244,120 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="text-center sm:text-left">
-                <h3 className="text-2xl font-bold text-foreground">
+              <div className="text-center sm:text-left flex-1 min-w-0">
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground truncate">
                   {user.name || "Foydalanuvchi"}
                 </h3>
-                <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  {user.email}
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
+                  <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 shrink-0" />
+                  <span className="truncate max-w-full">{user.email}</span>
                 </p>
                 {uploading && (
-                  <p className="text-sm text-primary mt-2 flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                  <p className="text-xs sm:text-sm text-primary mt-2 flex items-center gap-2 justify-center sm:justify-start">
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-2 border-primary border-t-transparent"></div>
                     Yuklanmoqda...
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Mobile Upload Button */}
-            <div className="sm:hidden flex gap-3">
+            {/* Mobile Upload Buttons */}
+            <div className="flex gap-2 sm:hidden">
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 className="flex-1"
+                size="sm"
               >
-                <Upload className="mr-2 h-4 w-4 text-emerald-600" />
-                {uploading ? "Yuklanmoqda..." : "Avatar Yuklash"}
+                <Upload className="mr-2 h-3.5 w-3.5" />
+                {uploading ? "Yuklanmoqda..." : "Yuklash"}
               </Button>
               {user.avatar && (
                 <Button
                   variant="destructive"
-                  size="icon"
+                  size="sm"
                   onClick={handleRemoveAvatar}
                   disabled={uploading}
+                  className="px-3"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
 
-            {/* User Info */}
+            {/* User Info & Edit Section */}
             {!editing ? (
-              <div className="space-y-5">
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
+                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 shrink-0">
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                       Ism
                     </p>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-sm sm:text-base truncate">
                       {user.name || "Kiritilmagan"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                    <Mail className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
+                  <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 shrink-0">
+                    <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                       Email
                     </p>
-                    <p className="font-semibold">{user.email}</p>
+                    <p className="font-semibold text-sm sm:text-base truncate">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                    <Calendar className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
+                  <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30 shrink-0">
+                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Ro'yxatdan o'tgan sana
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
+                      Ro'yxatdan o'tgan
                     </p>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-xs sm:text-base">
                       {formatDate(user.$createdAt)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
-                    <Shield className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                <div className="flex items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30">
+                  <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30 shrink-0">
+                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                       Hisob ID
                     </p>
-                    <p className="font-mono font-semibold">
-                      {user.$id.slice(0, 12)}...
+                    <p className="font-mono font-semibold text-xs sm:text-sm truncate">
+                      {user.$id}
                     </p>
                   </div>
                 </div>
 
                 <Button
                   onClick={() => setEditing(true)}
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-10 sm:h-11"
+                  size="default"
                 >
-                  <Edit className="mr-2 h-5 w-5" />
+                  <Edit className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                   Tahrirlash
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name" className="text-base">
+                  <Label htmlFor="name" className="text-sm sm:text-base">
                     Ism
                   </Label>
                   <Input
@@ -346,12 +367,16 @@ export default function ProfilePage() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Ismingizni kiriting"
-                    className="mt-2"
+                    className="mt-1.5 sm:mt-2 h-10 sm:h-11"
                   />
                 </div>
-                <div className="flex gap-3">
-                  <Button onClick={handleSave} className="flex-1" size="lg">
-                    <Save className="mr-2 h-5 w-5" />
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    onClick={handleSave}
+                    className="flex-1 h-10 sm:h-11"
+                    size="default"
+                  >
+                    <Save className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                     Saqlash
                   </Button>
                   <Button
@@ -360,11 +385,11 @@ export default function ProfilePage() {
                       setEditing(false);
                       setFormData({ name: user.name || "" });
                     }}
-                    className="flex-1"
-                    size="lg"
+                    className="flex-1 h-10 sm:h-11"
+                    size="default"
                   >
-                    <X className="mr-2 h-5 w-5" />
-                    Bekor qilish
+                    <X className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    Bekor
                   </Button>
                 </div>
               </div>
@@ -372,44 +397,55 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Hisob Xavfsizligi */}
+        {/* Hisob Xavfsizligi Card */}
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="text-xl">Hisob Xavfsizligi</CardTitle>
-            <CardDescription>Parol va xavfsizlik sozlamalari</CardDescription>
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-lg sm:text-xl">
+              Hisob Xavfsizligi
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Parol va xavfsizlik sozlamalari
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="p-6 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30 rounded-xl border border-red-200 dark:border-red-900/50">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/50">
-                  <Shield className="h-7 w-7 text-red-600 dark:text-red-400" />
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30 rounded-xl border border-red-200 dark:border-red-900/50">
+              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 rounded-full bg-red-100 dark:bg-red-900/50 shrink-0">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
                 </div>
-                <h4 className="text-lg font-semibold">Parolni o'zgartirish</h4>
+                <h4 className="text-base sm:text-lg font-semibold">
+                  Parolni o'zgartirish
+                </h4>
               </div>
-              <p className="text-sm text-muted-foreground mb-5">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                 Parolingizni xavfsiz saqlang va muntazam yangilang
               </p>
               <Button
                 variant="default"
                 onClick={() => router.push("/settings/password")}
+                className="w-full h-10 sm:h-11"
+                size="default"
               >
                 Parolni o'zgartirish
               </Button>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/50">
-                  <Shield className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50">
+              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 rounded-full bg-blue-100 dark:bg-blue-900/50 shrink-0">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h4 className="text-lg font-semibold">
-                  Ikki faktorli autentifikatsiya
-                </h4>
+                <h4 className="text-base sm:text-lg font-semibold">2FA</h4>
               </div>
-              <p className="text-sm text-muted-foreground mb-5">
-                Hisobingizni qo‘shimcha himoya bilan ta'minlang
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                Hisobingizni qo'shimcha himoya bilan ta'minlang
               </p>
-              <Button variant="outline" disabled>
+              <Button
+                variant="outline"
+                disabled
+                className="w-full h-10 sm:h-11"
+                size="default"
+              >
                 Tez orada
               </Button>
             </div>
